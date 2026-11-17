@@ -1,0 +1,4133 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salooooooon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+/* Maintien du ratio 6x10 en carreaux parfaits pour l'onglet Saloon */
+.grid-container {
+  --cols: 6;
+  --rows: 10;
+  --gap: 6px;
+  --grid-w: min(calc(100vw - 1rem), calc((100vh - 4.5rem - (var(--gap) * (var(--rows) - 1))) / var(--rows) * var(--cols) + (var(--gap) * (var(--cols) - 1))));
+  width: var(--grid-w);
+  height: calc((var(--grid-w) - (var(--gap) * (var(--cols) - 1))) / var(--cols) * var(--rows) + (var(--gap) * (var(--rows) - 1)));
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  gap: var(--gap);
+}
+    .tile-flash {
+      animation: tileFlash 0.28s ease-out;
+    }
+    @keyframes tileFlash {
+      0%   { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.9); }
+      100% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+    }
+    .tile-plus-one {
+      position: absolute;
+      pointer-events: none;
+      font-weight: 900;
+      font-size: 14px;
+      color: #f59e0b;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+      animation: tilePlusOne 0.6s ease-out forwards;
+      z-index: 30;
+    }
+    @keyframes tilePlusOne {
+      0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+      30%  { transform: translate(-50%, -80%) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -140%) scale(1); opacity: 0; }
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 4.5rem;
+      transform: translateX(-50%) translateY(1rem);
+      background: #7f1d1d;
+      color: #fee2e2;
+      border: 1px solid #ef4444;
+      padding: 0.55rem 0.9rem;
+      border-radius: 0.6rem;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 60;
+      pointer-events: none;
+      max-width: calc(100vw - 2rem);
+      text-align: center;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .discount-input {
+      width: 100%;
+      background: #020617;
+      border: 1px solid #334155;
+      color: #fbbf24;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-align: right;
+      outline: none;
+    }
+    .discount-input:focus {
+      border-color: #f59e0b;
+    }
+    .nav-badge {
+      position: absolute;
+      top: 4px;
+      right: 50%;
+      transform: translateX(22px);
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #0f172a;
+      pointer-events: none;
+    }
+    .saloon-ambience {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .saloon-halo {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60vw;
+      height: 60vw;
+      max-width: 600px;
+      max-height: 600px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.04) 40%, transparent 70%);
+      border-radius: 50%;
+      animation: haloPulse 6s ease-in-out infinite;
+    }
+    @keyframes haloPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    }
+    .saloon-particles {
+      position: absolute;
+      inset: 0;
+    }
+    .saloon-particles span {
+      position: absolute;
+      bottom: -10px;
+      width: 3px;
+      height: 3px;
+      background: rgba(245, 158, 11, 0.65);
+      border-radius: 50%;
+      animation: particleFloat 12s linear infinite;
+      box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+    }
+    .saloon-particles span:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 14s; }
+    .saloon-particles span:nth-child(2) { left: 25%; animation-delay: 2s; animation-duration: 11s; }
+    .saloon-particles span:nth-child(3) { left: 40%; animation-delay: 4s; animation-duration: 13s; }
+    .saloon-particles span:nth-child(4) { left: 55%; animation-delay: 6s; animation-duration: 10s; }
+    .saloon-particles span:nth-child(5) { left: 70%; animation-delay: 1s; animation-duration: 15s; }
+    .saloon-particles span:nth-child(6) { left: 85%; animation-delay: 3s; animation-duration: 12s; }
+    .saloon-particles span:nth-child(7) { left: 15%; animation-delay: 5s; animation-duration: 16s; }
+    .saloon-particles span:nth-child(8) { left: 35%; animation-delay: 7s; animation-duration: 11s; }
+    .saloon-particles span:nth-child(9) { left: 60%; animation-delay: 2s; animation-duration: 13s; }
+    .saloon-particles span:nth-child(10) { left: 80%; animation-delay: 8s; animation-duration: 14s; }
+    @keyframes particleFloat {
+      0%   { transform: translateY(0) scale(0); opacity: 0; }
+      10%  { opacity: 1; transform: translateY(-10px) scale(1); }
+      90%  { opacity: 0.7; }
+      100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+    }
+    .ticket-line-enter {
+      animation: ticketLineIn 0.22s ease-out;
+    }
+    .ticket-line-exit {
+      animation: ticketLineOut 0.18s ease-in forwards;
+    }
+    @keyframes ticketLineIn {
+      from { opacity: 0; transform: translateX(-22px); background-color: rgba(245, 158, 11, 0.15); }
+      to   { opacity: 1; transform: translateX(0);     background-color: transparent; }
+    }
+    @keyframes ticketLineOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(22px); }
+    }
+    .total-bump {
+      animation: totalBump 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes totalBump {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.15); color: #fbbf24; }
+      100% { transform: scale(1); }
+    }
+    .view-slide-in-right {
+      animation: viewSlideInRight 0.22s ease-out;
+    }
+    .view-slide-in-left {
+      animation: viewSlideInLeft 0.22s ease-out;
+    }
+    @keyframes viewSlideInRight {
+      from { opacity: 0; transform: translateX(18px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes viewSlideInLeft {
+      from { opacity: 0; transform: translateX(-18px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .reset-flash-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 70;
+      background: radial-gradient(circle at center, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0.1) 40%, transparent 75%);
+      opacity: 0;
+      animation: resetFlashAnim 0.5s ease-out;
+    }
+    @keyframes resetFlashAnim {
+      0%   { opacity: 0; }
+      25%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .confetti {
+      position: fixed;
+      width: 7px;
+      height: 7px;
+      pointer-events: none;
+      z-index: 71;
+      animation: confettiFall 0.9s ease-out forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: 0; }
+    }
+    .tile-shine {
+      position: relative;
+    }
+    .tile-shine::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.32) 50%, transparent 65%);
+      pointer-events: none;
+      transition: left 0.55s ease;
+    }
+    .tile-shine:hover::after {
+      left: 100%;
+    }
+    .sale-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #0f172a;
+      padding: 16px 28px;
+      border-radius: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 900;
+      box-shadow: 0 20px 60px rgba(245, 158, 11, 0.45), 0 0 0 2px rgba(245, 158, 11, 0.3);
+      z-index: 72;
+      opacity: 0;
+      pointer-events: none;
+      text-align: center;
+      animation: saleToastAnim 1.2s ease-out forwards;
+    }
+    @keyframes saleToastAnim {
+      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+      15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+      28%  { transform: translate(-50%, -50%) scale(1); }
+      78%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+    }
+    .nav-pop {
+      animation: navPop 0.22s ease-out;
+    }
+    @keyframes navPop {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
+    #app-content {
+      transition: background 0.45s ease;
+    }
+    #app-content.tint-saloon {
+      background: radial-gradient(ellipse at 50% 25%, rgba(245, 158, 11, 0.09), transparent 60%);
+    }
+    #app-content.tint-stock {
+      background: radial-gradient(ellipse at 50% 25%, rgba(59, 130, 246, 0.09), transparent 60%);
+    }
+    #app-content.tint-graphs {
+      background: radial-gradient(ellipse at 50% 25%, rgba(139, 92, 246, 0.09), transparent 60%);
+    }
+    #app-content.tint-recette {
+      background: radial-gradient(ellipse at 50% 25%, rgba(16, 185, 129, 0.09), transparent 60%);
+    }
+    #app-content.tint-options {
+      background: radial-gradient(ellipse at 50% 25%, rgba(148, 163, 184, 0.06), transparent 60%);
+    }
+    .low-stock-pulse {
+      animation: lowStockPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes lowStockPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+      50%      { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .low-stock-pulse { animation: none; }
+    }
+    #input-price {
+      transition: box-shadow 0.22s, border-color 0.22s, background 0.22s;
+      background-image: linear-gradient(135deg, rgba(245, 158, 11, 0.04), transparent);
+    }
+    #input-price:focus {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15), 0 0 14px rgba(245, 158, 11, 0.28);
+      caret-color: #f59e0b;
+    }
+    #input-price::-webkit-inner-spin-button,
+    #input-price::-webkit-outer-spin-button {
+      opacity: 0.45;
+    }
+    #product-modal:not(.hidden),
+    #operation-modal:not(.hidden),
+    #global-history-modal:not(.hidden) {
+      animation: modalBackdropIn 0.2s ease-out;
+    }
+    #product-modal:not(.hidden) > div,
+    #operation-modal:not(.hidden) > div,
+    #global-history-modal:not(.hidden) > div {
+      animation: modalContentIn 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes modalBackdropIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes modalContentIn {
+      from { opacity: 0; transform: scale(0.94) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .daily-goal-fill {
+      transition: width 0.6s ease, background-color 0.35s ease;
+      background: #10b981;
+    }
+    .daily-goal-fill.goal-low  { background: #10b981; }
+    .daily-goal-fill.goal-mid  { background: #f59e0b; }
+    .daily-goal-fill.goal-high { background: #ef4444; }
+    .daily-goal-fill.goal-done { background: linear-gradient(90deg, #10b981, #22c55e); box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+    .tile-ripple-effect {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.6);
+      transform: translate(-50%, -50%) scale(0);
+      animation: tileRipple 0.55s ease-out forwards;
+      pointer-events: none;
+      z-index: 5;
+    }
+    @keyframes tileRipple {
+      to {
+        transform: translate(-50%, -50%) scale(9);
+        opacity: 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tile-ripple-effect { animation: none; opacity: 0; }
+    }
+    #product-modal > div,
+    #operation-modal > div,
+    #global-history-modal > div {
+      background:
+        radial-gradient(circle at 25% 15%, rgba(139, 92, 246, 0.07), transparent 40%),
+        radial-gradient(circle at 75% 85%, rgba(245, 158, 11, 0.055), transparent 40%),
+        #0f172a;
+      background-size: 200% 200%, 200% 200%, 100% 100%;
+      animation: modalBgShift 14s ease-in-out infinite;
+    }
+    @keyframes modalBgShift {
+      0%, 100% { background-position: 0% 0%, 100% 100%, 0 0; }
+      50%      { background-position: 100% 100%, 0% 0%, 0 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #product-modal > div,
+      #operation-modal > div,
+      #global-history-modal > div {
+        animation: none;
+      }
+    }
+    .nav-indicator {
+      position: absolute;
+      bottom: 0;
+      height: 2px;
+      width: 26px;
+      background: #f59e0b;
+      border-radius: 2px;
+      transform: translateX(-50%);
+      transition: left 0.26s ease-out;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+      pointer-events: none;
+      z-index: 41;
+    }
+.install-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 4.5rem;
+  width: calc(100vw - 1.5rem);
+  max-width: 26rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  background: #0f172a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 0.9rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(245, 158, 11, 0.08);
+  z-index: 45;
+  opacity: 0;
+  transform: translateX(-50%) translateY(140%);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  pointer-events: none;
+}
+.install-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.saloon-panel,
+.saloon-panel * {
+  touch-action: pan-y;
+}
+.tile-moving {
+  outline: 3px solid #f59e0b !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.9), 0 0 48px rgba(245, 158, 11, 0.5) !important;
+  z-index: 25;
+  animation: tileMovingPulse 1.4s ease-in-out infinite;
+  cursor: grabbing !important;
+}
+@keyframes tileMovingPulse {
+  0%, 100% { transform: scale(1.04); }
+  50% { transform: scale(1.1); }
+}
+.tile-target-hint {
+  outline: 2px dashed rgba(16, 185, 129, 0.7) !important;
+  outline-offset: 2px;
+  cursor: pointer !important;
+}
+.pie-legend-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #334155;
+  transition: background 0.2s ease, width 0.2s ease;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.pie-legend-dot.active {
+  background: #f59e0b;
+  width: 16px;
+}
+    .btn-shine {
+      position: relative;
+      overflow: hidden;
+    }
+.tile-clone {
+  position: fixed;
+  z-index: 80;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55), 0 0 0 2px rgba(245,158,11,0.6);
+  transform: scale(1.08);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  will-change: left, top, transform;
+}
+.tile-drop-target {
+  outline: 2px solid #f59e0b !important;
+  outline-offset: 2px;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  transform: scale(1.04);
+  transition: transform 0.15s ease, background-color 0.15s ease, outline 0.15s ease;
+}
+.tile-origin-dragging {
+  opacity: 0.25 !important;
+  transform: scale(0.92);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.mode-card.selected {
+  border-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+.mode-card.selected span:first-of-type {
+  color: #fbbf24 !important;
+}
+#product-preview-modal img {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.numpad-key {
+  height: 52px;
+  border-radius: 12px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  transition: background 0.12s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.numpad-key:active {
+  background: #334155;
+  transform: scale(0.96);
+}
+.large-text .text-\[9px\]  { font-size: 11.5px; line-height: 1.3; }
+.large-text .text-\[10px\] { font-size: 12.5px; line-height: 1.3; }
+.large-text .text-\[11px\] { font-size: 13.5px; line-height: 1.35; }
+.large-text .text-xs  { font-size: 15px; line-height: 1.4; }
+.large-text .text-sm  { font-size: 16px; line-height: 1.4; }
+.large-text .text-base { font-size: 18px; line-height: 1.4; }
+.large-text .text-lg  { font-size: 20px; line-height: 1.3; }
+.large-text .text-xl  { font-size: 22px; line-height: 1.25; }
+.large-text .text-2xl { font-size: 28px; line-height: 1.2; }
+.large-text .nav-badge { font-size: 12px; }
+.large-text .toast { font-size: 15px; padding: 0.7rem 1.1rem; }
+.large-text .discount-input { font-size: 14px; padding: 5px 8px; }
+.large-text .numpad-key { font-size: 1.65rem; }
+.large-text .tile-plus-one { font-size: 18px; }
+    .btn-shine::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -120%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.42) 50%, transparent 58%);
+      animation: btnShineAnim 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes btnShineAnim {
+      0%, 45%   { left: -120%; }
+      65%, 100% { left: 120%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-shine::before { animation: none; opacity: 0; }
+    }
+  </style>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#010104">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="./icon.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2208.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-640x1136.png">
+<meta property="og:title" content="Salooooooon">
+<meta name="twitter:title" content="Salooooooon">
+<meta name="application-name" content="Salooooooon">
+<meta name="apple-mobile-web-app-title" content="Salooooooon">
+<meta name="description" content="Yest">
+<meta property="og:description" content="Yest">
+<meta name="twitter:description" content="Yest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
+<meta property="og:image" content="https://mekeirish.github.io/Salooooooon/icon.png">
+<meta name="twitter:image" content="https://mekeirish.github.io/Salooooooon/icon.png">
+<meta name="twitter:card" content="summary">
+<meta property="og:url" content="https://mekeirish.github.io/Salooooooon/">
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- ZONE DE CONTENU PRINCIPAL (NAVIGABLE VIA BARRE DU BAS) -->
+  <main id="app-content" class="flex-1 relative overflow-hidden flex items-center justify-center p-2">
+    
+    <!-- VIEWS / ONGLETS -->
+    
+    <!-- 1. SALOON (VUE PRINCIPALE CAISSE) -->
+    <div id="view-saloon" class="w-full h-full flex items-center justify-center relative">
+      <div id="saloon-ambience" class="saloon-ambience">
+        <div class="saloon-halo"></div>
+        <div class="saloon-particles">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div id="grid" class="grid-container relative"></div>
+<div id="page-indicator" class="hidden absolute top-2 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-slate-950/90 border border-amber-500/40 text-[11px] font-mono font-bold text-amber-400 shadow-lg pointer-events-none" style="opacity: 0; transition: opacity 0.25s ease;">
+  <span id="page-indicator-text">1 / 1</span>
+</div>
+    </div>
+
+    <!-- 2. STOCK (GESTION INVENTAIRE) -->
+    <div id="view-stock" class="hidden w-full h-full max-w-md flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-md shadow-2xl overflow-hidden">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+        <div>
+          <h2 class="text-base font-black tracking-wider text-amber-400 uppercase">État des Stocks</h2>
+          <p class="text-[11px] text-slate-400">Inventaire et quantités en temps réel</p>
+        </div>
+        <span id="stock-count-badge" class="text-xs bg-slate-950 font-mono text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/30">0 Réf.</span>
+      </div>
+
+      <div class="mb-3 space-y-2">
+        <div class="relative">
+          <input type="text" id="stock-search" oninput="renderStockView()" placeholder="Rechercher un produit..." class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2 pl-9 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/60">
+          <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <button id="stock-low-filter-btn" onclick="toggleStockLowFilter()" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg px-2 py-1.5 text-[11px] font-bold text-slate-300 transition flex items-center justify-center gap-1.5">
+          <span>⚠</span>
+          <span>Afficher uniquement ruptures / alertes</span>
+        </button>
+      </div>
+
+      <div id="stock-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+    </div>
+
+    <!-- 3. GRAPHS (STATISTIQUES ET EVOLUTION) -->
+    <div id="view-graphs" class="hidden w-full h-full max-w-md flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-md shadow-2xl overflow-y-auto space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800 shrink-0">
+        <div>
+          <h2 class="text-base font-black tracking-wider text-amber-400 uppercase">Statistiques</h2>
+          <p class="text-[11px] text-slate-400">Ventes du jour & Évolution mensuelle</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col items-center">
+        <h3 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide self-start">Ventes d'aujourd'hui</h3>
+        <div class="w-full h-44 flex items-center justify-center relative">
+          <canvas id="todayPieChart"></canvas>
+        </div>
+<div id="pie-legend-pager" class="w-full mt-2 hidden" style="touch-action: pan-y;">
+  <div id="pie-legend-viewport" class="overflow-hidden">
+    <div id="pie-legend-track" class="flex" style="width: 100%; transition: none;"></div>
+  </div>
+  <div id="pie-legend-dots" class="flex items-center justify-center gap-1.5 mt-2"></div>
+</div>
+      </div>
+
+      <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 flex flex-col items-center">
+        <h3 class="text-xs font-bold text-slate-300 mb-2 uppercase tracking-wide self-start">Évolution de ce mois</h3>
+        <div class="w-full h-44 flex items-center justify-center relative">
+          <canvas id="monthBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. RECETTE (HISTORIQUE DES OPÉRATIONS DU JOUR) -->
+    <div id="view-recette" class="hidden w-full h-full max-w-md flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl p-4 backdrop-blur-md shadow-2xl overflow-hidden">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3 shrink-0">
+        <div>
+          <h2 class="text-base font-black tracking-wider text-amber-400 uppercase">Recette du Jour</h2>
+          <p id="recette-date-label" class="text-[11px] text-slate-400">Opérations accomplies aujourd'hui</p>
+        </div>
+        <div class="text-right">
+          <span class="text-[10px] text-slate-500 uppercase block font-mono">Total du jour</span>
+          <span id="recette-total-sum" class="text-sm font-black text-amber-400 font-mono">0 Da</span>
+        </div>
+      </div>
+      <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 shrink-0 mb-3">
+        <div class="flex justify-between items-center text-[10px] mb-1.5">
+          <span class="text-slate-400 font-mono">Objectif : <span id="daily-goal-target" class="text-slate-200 font-bold">20 000 Da</span></span>
+          <span id="daily-goal-percent" class="text-amber-400 font-bold font-mono">0%</span>
+        </div>
+        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="daily-goal-fill" class="daily-goal-fill h-full goal-low" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] mt-1 font-mono">
+          <span class="text-slate-500">CA du jour</span>
+          <span id="daily-goal-current" class="text-emerald-400 font-bold">0 Da</span>
+        </div>
+      </div>
+
+      <div id="recette-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+    </div>
+
+    <!-- 5. OPTIONS (CONFIGURATION, API, HISTORIQUE GLOBAL & AUDIO) -->
+    <div id="view-options" class="hidden absolute inset-0 z-20 w-full h-full bg-slate-950 flex flex-col p-4 overflow-y-auto space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800 shrink-0">
+        <div>
+          <h2 class="text-base font-black tracking-wider text-amber-400 uppercase">Options & Paramètres</h2>
+          <p class="text-[11px] text-slate-400">Centre de contrôle unifié</p>
+        </div>
+      </div>
+
+      <!-- Sous-onglets de navigation interne -->
+      <div class="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 shrink-0">
+        <button onclick="switchOptionsSubTab('general')" id="opt-tab-general" class="py-1.5 text-[10px] font-bold uppercase rounded-lg transition bg-amber-500 text-slate-950 shadow">Général</button>
+        <button onclick="switchOptionsSubTab('display')" id="opt-tab-display" class="py-1.5 text-[10px] font-bold uppercase rounded-lg transition text-slate-400 hover:text-white">Préférences</button>
+        <button onclick="switchOptionsSubTab('data')" id="opt-tab-data" class="py-1.5 text-[10px] font-bold uppercase rounded-lg transition text-slate-400 hover:text-white">Données</button>
+      </div>
+
+      <!-- PANEL 1: GÉNÉRAL (Audio, Haptique, Objectif) -->
+<div id="opt-panel-general" class="space-y-3 block">
+  <!--#SUPPRIMER:html:div.bg-slate-900-->
+  <!-- Mode d'affichage -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Mode d’affichage</h4>
+      <p class="text-[10px] text-slate-500">Taille de la grille produits</p>
+    </div>
+    <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+      <button type="button" id="mode-btn-compact" onclick="setGridMode('compact')" class="py-1.5 text-[10px] font-bold uppercase rounded-md transition text-slate-400 hover:text-white">Compact</button>
+      <button type="button" id="mode-btn-normal" onclick="setGridMode('normal')" class="py-1.5 text-[10px] font-bold uppercase rounded-md transition text-slate-400 hover:text-white">Normal</button>
+      <button type="button" id="mode-btn-grand" onclick="setGridMode('grand')" class="py-1.5 text-[10px] font-bold uppercase rounded-md transition text-slate-400 hover:text-white">Grand</button>
+      <button type="button" id="mode-btn-custom" onclick="setGridMode('custom')" class="py-1.5 text-[10px] font-bold uppercase rounded-md transition text-slate-400 hover:text-white">Perso</button>
+    </div>
+    <!-- Constructeur Personnalisé -->
+    <div id="custom-builder" class="hidden mt-3 space-y-3">
+      <div class="flex items-center justify-center gap-3">
+        <div class="flex flex-col items-center gap-1">
+          <button type="button" ontouchstart="stepCustomDim('cols',1)" onmousedown="stepCustomDim('cols',1)" class="w-9 h-7 rounded-lg bg-slate-800 text-amber-400 text-sm font-bold active:bg-slate-700">▲</button>
+          <input type="number" id="custom-cols" min="4" max="8" value="6" onchange="updateCustomBuilder()" class="w-14 bg-slate-950 border border-slate-700 rounded-lg px-1 py-1.5 text-sm text-center text-white font-mono font-bold">
+          <button type="button" ontouchstart="stepCustomDim('cols',-1)" onmousedown="stepCustomDim('cols',-1)" class="w-9 h-7 rounded-lg bg-slate-800 text-amber-400 text-sm font-bold active:bg-slate-700">▼</button>
+          <span class="text-[9px] text-slate-500">Colonnes</span>
+        </div>
+        <span class="text-slate-600 text-lg font-bold">×</span>
+        <div class="flex flex-col items-center gap-1">
+          <button type="button" ontouchstart="stepCustomDim('rows',1)" onmousedown="stepCustomDim('rows',1)" class="w-9 h-7 rounded-lg bg-slate-800 text-amber-400 text-sm font-bold active:bg-slate-700">▲</button>
+          <input type="number" id="custom-rows" min="6" max="12" value="10" onchange="updateCustomBuilder()" class="w-14 bg-slate-950 border border-slate-700 rounded-lg px-1 py-1.5 text-sm text-center text-white font-mono font-bold">
+          <button type="button" ontouchstart="stepCustomDim('rows',-1)" onmousedown="stepCustomDim('rows',-1)" class="w-9 h-7 rounded-lg bg-slate-800 text-amber-400 text-sm font-bold active:bg-slate-700">▼</button>
+          <span class="text-[9px] text-slate-500">Lignes</span>
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-400 text-center">Colorez un rectangle pour la feuille de calcul.<br>Il reste toujours rectangulaire.</p>
+      <div id="custom-grid-preview" class="grid gap-1 mx-auto bg-slate-950 p-2 rounded-xl border border-slate-800" style="width: fit-content;"></div>
+      <div class="flex gap-2">
+        <button type="button" onclick="clearCustomRect()" class="flex-1 text-[11px] py-2 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">Effacer</button>
+        <button type="button" onclick="applyCustomGrid()" class="flex-1 text-[11px] py-2 rounded-lg bg-amber-500 text-slate-950 font-bold">Appliquer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+      <!-- PANEL 2: AFFICHAGE -->
+      <div id="opt-panel-display" class="hidden space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Carte Ambiance -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-amber-400 text-lg">✨</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-ambience-input" onchange="toggleAmbience(this)" class="sr-only peer">
+                <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+            <div>
+              <h5 class="text-xs font-bold text-slate-200">Ambiance Saloon</h5>
+              <p class="text-[9px] text-slate-500">Halo doré & particules</p>
+            </div>
+          </div>
+
+          <!-- Carte Easy Vision -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col justify-between gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-blue-400 text-lg">👁️</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-easyvision-input" onchange="toggleEasyVision(this)" class="sr-only peer">
+                <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+            <div>
+              <h5 class="text-xs font-bold text-slate-200">Easy Vision</h5>
+              <p class="text-[9px] text-slate-500">Miniatures ticket</p>
+            </div>
+          </div>
+        </div>
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+  <div class="flex items-center gap-2.5">
+    <span class="text-amber-400 text-lg">🔠</span>
+    <div>
+      <h5 class="text-xs font-bold text-slate-200">Grands caractères</h5>
+      <p class="text-[9px] text-slate-500">Améliore la lisibilité des textes</p>
+    </div>
+  </div>
+  <label class="relative inline-flex items-center cursor-pointer">
+    <input type="checkbox" id="toggle-large-text-input" onchange="toggleLargeText(this)" class="sr-only peer">
+    <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+  </label>
+</div>
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2.5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h5 class="text-xs font-semibold text-slate-300">Son</h5>
+      <p class="text-[10px] text-slate-500">Effets sonores des actions</p>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="toggle-sound-input" onchange="toggleSoundSetting(this)" class="sr-only peer">
+      <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+    </label>
+  </div>
+  <div class="flex items-center justify-between border-t border-slate-800/50 pt-2.5">
+    <div>
+      <h5 class="text-xs font-semibold text-slate-300">Vibration</h5>
+      <p class="text-[10px] text-slate-500">Retour haptique sur mobile</p>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="toggle-vibration-input" onchange="toggleVibrationSetting(this)" class="sr-only peer">
+      <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+    </label>
+  </div>
+</div>
+
+        <!-- Toggles Référence -->
+<div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2.5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h5 class="text-xs font-semibold text-slate-300">Prix d'achat</h5>
+      <p class="text-[10px] text-slate-500">Coût & marge</p>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="toggle-show-cost" onchange="toggleRefField('cost', this)" class="sr-only peer">
+      <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+    </label>
+  </div>
+  <div class="flex items-center justify-between border-t border-slate-800/50 pt-2.5">
+    <div>
+      <h5 class="text-xs font-semibold text-slate-300">Stock</h5>
+      <p class="text-[10px] text-slate-500">Quantité disponible</p>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="toggle-show-stock" onchange="toggleRefField('stock', this)" class="sr-only peer">
+      <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+    </label>
+  </div>
+  <div class="flex items-center justify-between border-t border-slate-800/50 pt-2.5">
+    <div>
+      <h5 class="text-xs font-semibold text-slate-300">Alerte</h5>
+      <p class="text-[10px] text-slate-500">Seuil de rupture</p>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="toggle-show-alert" onchange="toggleRefField('alert', this)" class="sr-only peer">
+      <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+    </label>
+  </div>
+</div>
+      </div>
+
+      <!-- PANEL 3: DONNÉES -->
+<div id="opt-panel-data" class="hidden space-y-3">
+  <!-- Objectif Journalier -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Objectif journalier</h4>
+      <p class="text-[10px] text-slate-500">CA cible affiché en barre de progression</p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <input type="number" step="100" min="0" id="input-daily-goal" onchange="saveDailyGoal(this.value)" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono" placeholder="20000">
+      <span class="text-xs text-slate-500 font-mono">Da</span>
+    </div>
+  </div>
+
+  <!-- Clé API ImgBB -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Clé API ImgBB</h4>
+      <p class="text-[10px] text-slate-500">Stockage distant automatique des images</p>
+    </div>
+    <div class="flex gap-2">
+      <input type="password" id="input-imgbb-key" placeholder="Clé API ImgBB..." class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono">
+      <button onclick="saveImgBbKey()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">Sauver</button>
+    </div>
+  </div>
+
+  <!-- Historique Global -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Historique Global</h4>
+      <p class="text-[10px] text-slate-500">Consulter toutes les opérations</p>
+    </div>
+    <button onclick="openGlobalHistoryModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Voir
+    </button>
+  </div>
+
+  <!-- Export / Import complet JSON -->
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Données complètes</h4>
+      <p class="text-[10px] text-slate-500">Produits, historique, paramètres</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportAllData()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition">Exporter JSON</button>
+      <label class="flex-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition text-center cursor-pointer">
+        Importer JSON
+        <input type="file" accept=".json,application/json" class="hidden" onchange="importAllData(event)">
+      </label>
+    </div>
+  </div>
+</div>
+    </div>
+
+  </main>
+
+  <!-- BARRE DE NAVIGATION EN BAS (5 ONGLETS) -->
+  <nav id="main-nav" class="relative h-14 bg-slate-900 border-t border-slate-800 flex items-center justify-around px-2 z-40 shrink-0">
+    <button onclick="switchTab('stock')" id="nav-stock" class="flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-300 transition">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      <span class="text-[10px] font-medium tracking-tight">Stock</span>
+    </button>
+
+    <button onclick="switchTab('graphs')" id="nav-graphs" class="flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-300 transition">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      <span class="text-[10px] font-medium tracking-tight">Graphs</span>
+    </button>
+
+    <button onclick="switchTab('saloon')" id="nav-saloon" class="relative flex flex-col items-center justify-center flex-1 h-full text-amber-400 font-bold transition">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span class="text-[10px] font-bold tracking-tight">Saloon</span>
+      <span id="nav-saloon-badge" class="nav-badge hidden">0</span>
+    </button>
+
+    <button onclick="switchTab('recette')" id="nav-recette" class="relative flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-300 transition">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="text-[10px] font-medium tracking-tight">Recette</span>
+    </button>
+
+    <button onclick="switchTab('options')" id="nav-options" class="flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-300 transition">
+      <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span class="text-[10px] font-medium tracking-tight">Options</span>
+    </button>
+
+    <div id="nav-indicator" class="nav-indicator"></div>
+  </nav>
+<div id="install-banner" class="install-banner" role="dialog" aria-live="polite">
+  <div class="flex items-center gap-2.5 flex-1 min-w-0">
+    <div class="w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+    </div>
+    <div class="min-w-0">
+      <p data-install-title class="text-xs font-bold text-slate-100 leading-tight">Installer l'application</p>
+      <p data-install-sub class="text-[10px] text-slate-400 leading-tight">Accès rapide depuis l'écran d'accueil</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-1.5 shrink-0">
+    <button type="button" onclick="dismissInstallBanner()" aria-label="Fermer" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <button type="button" id="install-banner-install" onclick="installPwa()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95">
+      Installer
+    </button>
+  </div>
+</div>
+
+  <!-- MODAL ADMIN / ÉDITION PRODUIT -->
+  <div id="product-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-xl p-5 shadow-2xl relative">
+      <button onclick="playSound('close'); closeModal();" class="absolute top-3 right-3 text-slate-400 hover:text-white p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      
+      <h3 class="text-lg font-bold text-amber-400 mb-4">Éditer le carreau <span id="modal-tile-id" class="text-slate-400 text-sm"></span></h3>
+      
+      <form id="product-form" onsubmit="saveProduct(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nom du produit</label>
+          <input type="text" id="input-name" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500 text-white">
+        </div>
+        
+        <div class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Prix vente (Da)</label>
+              <input type="number" step="1" min="0" id="input-price" required oninput="updateMarginDisplay()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-amber-500 text-white">
+            </div>
+            <div id="field-cost-wrapper">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Prix achat (Da)</label>
+              <input type="number" step="1" min="0" id="input-cost" oninput="updateMarginDisplay()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-amber-500 text-white" placeholder="Optionnel">
+            </div>
+            <div id="field-stock-wrapper">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stock</label>
+              <input type="number" step="1" min="0" id="input-stock" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-amber-500 text-white" placeholder="∞">
+            </div>
+            <div id="field-alert-wrapper">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Alerte</label>
+              <input type="number" step="1" min="0" id="input-alert" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-amber-500 text-white" placeholder="Min">
+            </div>
+          </div>
+          <p id="margin-display" class="text-[10px] font-mono mt-1 text-emerald-400/80 hidden"></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Image du produit</label>
+          <input type="file" id="input-image" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
+          <div id="image-preview-container" class="mt-2 hidden">
+            <img id="image-preview" src="" class="w-14 h-14 object-contain rounded-md border border-slate-700">
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="playSound('delete'); deleteProduct();" id="btn-delete" class="hidden flex-1 bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-sm font-semibold transition">Supprimer</button>
+          <button type="submit" id="btn-save-product" class="btn-shine flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-lg text-sm font-semibold transition">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DÉTAIL OPÉRATION (RECETTE) -->
+  <div id="operation-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-xl p-5 shadow-2xl relative flex flex-col max-h-[80vh]">
+      <button onclick="playSound('close'); closeOperationModal();" class="absolute top-3 right-3 text-slate-400 hover:text-white p-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      
+      <div class="mb-3">
+        <span id="modal-op-time" class="text-xs font-mono text-amber-400 font-bold uppercase">--:--:--</span>
+        <h3 class="text-base font-black text-white">Détails de l'opération</h3>
+      </div>
+      
+      <div id="modal-op-items" class="flex-1 overflow-y-auto space-y-1.5 pr-1 my-2 text-xs font-mono border-y border-slate-800 py-2"></div>
+
+      <div class="flex justify-between items-center pt-2 font-mono">
+        <span class="text-xs text-slate-400 uppercase font-bold">Total Opération</span>
+        <span id="modal-op-total" class="text-base font-black text-amber-400">0 Da</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HISTORIQUE GLOBAL (OPTIONS) -->
+  <div id="global-history-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-xl p-5 shadow-2xl relative flex flex-col h-[85vh]">
+  <button onclick="playSound('close'); closeGlobalHistoryModal();" class="absolute top-3 right-3 text-slate-400 hover:text-white p-1">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+  
+  <div class="mb-3 pb-2 border-b border-slate-800 shrink-0 space-y-2">
+    <h3 class="text-base font-black text-amber-400 uppercase">Historique Global</h3>
+    <p class="text-[11px] text-slate-400">Toutes les opérations enregistrées</p>
+    <div class="flex gap-2">
+      <input type="date" id="global-history-date" onchange="filterGlobalHistory(this.value)" class="flex-1 bg-slate-950/80 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-amber-500/60">
+      <button onclick="filterGlobalHistory('')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2 py-1 rounded-lg text-[11px] font-bold transition">Effacer</button>
+    </div>
+  </div>
+  
+  <div id="global-history-list" class="flex-1 overflow-y-auto space-y-2 pr-1 my-1"></div>
+
+  <div class="pt-3 border-t border-slate-800 flex justify-between items-center shrink-0">
+    <span class="text-xs font-bold text-slate-400 uppercase">Chiffre d'Affaires Total</span>
+    <span id="global-history-total" class="text-base font-black text-amber-400 font-mono">0 Da</span>
+  </div>
+
+  <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 space-y-2 mt-3 shrink-0">
+    <div>
+      <h4 class="text-xs font-bold text-slate-200">Sauvegarde de l'historique</h4>
+      <p class="text-[10px] text-slate-500">Exporter ou archiver les données</p>
+      <p id="history-size-label" class="text-[10px] text-amber-400/80 font-mono mt-1">0 opération(s) • 0.0 Ko</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="exportHistory()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition">Exporter</button>
+      <button onclick="archiveHistory()" class="flex-1 bg-slate-800 hover:bg-red-900/60 text-red-300 border border-red-500/30 px-3 py-1.5 rounded-lg text-xs font-bold transition">Archiver & vider</button>
+    </div>
+  </div>
+</div>
+  </div>
+  <div id="mode-onboarding-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-5 pt-5 pb-3 text-center border-b border-slate-800">
+        <h2 class="text-lg font-black text-amber-400 tracking-wide">Choisissez votre mode</h2>
+        <p class="text-[11px] text-slate-400 mt-1">Adaptez la grille à votre usage</p>
+      </div>
+
+      <div class="p-4 grid grid-cols-3 gap-3">
+        <!-- Compact -->
+        <button type="button" onclick="selectOnboardingMode('compact')" id="onboard-compact" class="mode-card group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-slate-700 bg-slate-950/80 hover:border-amber-500/60 transition">
+          <div class="w-full aspect-square rounded-lg overflow-hidden bg-slate-900 border border-slate-800 p-1.5 flex items-center justify-center">
+            <div class="w-full h-full grid grid-cols-3 grid-rows-4 gap-1">
+              <div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div>
+              <div class="bg-amber-500/70 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-amber-500/70 rounded-sm"></div>
+              <div class="bg-amber-500/70 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-amber-500/70 rounded-sm"></div>
+              <div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div>
+            </div>
+          </div>
+          <span class="text-[11px] font-bold text-slate-200 group-hover:text-amber-400">Compact</span>
+          <span class="text-[9px] text-slate-500 leading-tight text-center">Carreaux plus grands</span>
+        </button>
+
+        <!-- Normal -->
+        <button type="button" onclick="selectOnboardingMode('normal')" id="onboard-normal" class="mode-card group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-slate-700 bg-slate-950/80 hover:border-amber-500/60 transition">
+          <div class="w-full aspect-square rounded-lg overflow-hidden bg-slate-900 border border-slate-800 p-1.5 flex items-center justify-center">
+            <div class="w-full h-full grid grid-cols-4 grid-rows-5 gap-[3px]">
+              <div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div>
+              <div class="bg-amber-500/70 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-amber-500/70 rounded-sm"></div>
+              <div class="bg-amber-500/70 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-amber-500/70 rounded-sm"></div>
+              <div class="bg-amber-500/70 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-slate-800 rounded-sm"></div><div class="bg-amber-500/70 rounded-sm"></div>
+              <div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div><div class="bg-amber-500/80 rounded-sm"></div>
+            </div>
+          </div>
+          <span class="text-[11px] font-bold text-slate-200 group-hover:text-amber-400">Normal</span>
+          <span class="text-[9px] text-slate-500 leading-tight text-center">Équilibre idéal</span>
+        </button>
+
+        <!-- Grand -->
+        <button type="button" onclick="selectOnboardingMode('grand')" id="onboard-grand" class="mode-card group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-slate-700 bg-slate-950/80 hover:border-amber-500/60 transition">
+          <div class="w-full aspect-square rounded-lg overflow-hidden bg-slate-900 border border-slate-800 p-1.5 flex items-center justify-center">
+            <div class="w-full h-full grid grid-cols-5 grid-rows-6 gap-[2px]">
+              <div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div>
+              <div class="bg-amber-500/70 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-amber-500/70 rounded-[2px]"></div>
+              <div class="bg-amber-500/70 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-amber-500/70 rounded-[2px]"></div>
+              <div class="bg-amber-500/70 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-amber-500/70 rounded-[2px]"></div>
+              <div class="bg-amber-500/70 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-slate-800 rounded-[2px]"></div><div class="bg-amber-500/70 rounded-[2px]"></div>
+              <div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div><div class="bg-amber-500/80 rounded-[2px]"></div>
+            </div>
+          </div>
+          <span class="text-[11px] font-bold text-slate-200 group-hover:text-amber-400">Grand</span>
+          <span class="text-[9px] text-slate-500 leading-tight text-center">Plus de produits</span>
+        </button>
+      </div>
+
+      <div class="px-5 pb-5 pt-2 space-y-4">
+        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+          <input type="checkbox" id="onboard-dont-show" class="w-4 h-4 rounded border-slate-600 bg-slate-800 text-amber-500 focus:ring-amber-500/40">
+          <span class="text-[11px] text-slate-400">Ne plus afficher ce message au démarrage</span>
+        </label>
+        <button type="button" onclick="confirmOnboardingMode()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition active:scale-[0.98]">
+          Continuer
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="product-preview-modal" class="hidden fixed inset-0 z-[90] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6" onclick="closeProductPreview()">
+    <div class="relative w-full max-w-xs bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+      <div id="preview-image-container" class="w-full aspect-square bg-slate-950 flex items-center justify-center overflow-hidden">
+        <img id="preview-image" src="" alt="" class="w-full h-full object-contain">
+        <div id="preview-placeholder" class="hidden text-4xl font-black text-amber-500/60"></div>
+      </div>
+      <div class="p-4 space-y-2">
+        <h3 id="preview-name" class="text-base font-bold text-white leading-tight"></h3>
+        <div class="flex items-center justify-between">
+          <span id="preview-price" class="text-lg font-black text-amber-400 font-mono"></span>
+          <span id="preview-stock" class="text-xs font-mono text-slate-400"></span>
+        </div>
+      </div>
+      <button type="button" onclick="closeProductPreview()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="numpad-modal" class="hidden fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-4 pt-4 pb-2 flex items-center justify-between border-b border-slate-800">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Remise</span>
+        <button type="button" onclick="closeNumpad()" class="text-slate-500 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="px-4 py-3">
+        <div id="numpad-display" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-right font-mono text-2xl font-black text-amber-400 tracking-wider">0</div>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 p-3 pt-0">
+        <button type="button" onclick="numpadPress('1')" class="numpad-key">1</button>
+        <button type="button" onclick="numpadPress('2')" class="numpad-key">2</button>
+        <button type="button" onclick="numpadPress('3')" class="numpad-key">3</button>
+        <button type="button" onclick="numpadPress('4')" class="numpad-key">4</button>
+        <button type="button" onclick="numpadPress('5')" class="numpad-key">5</button>
+        <button type="button" onclick="numpadPress('6')" class="numpad-key">6</button>
+        <button type="button" onclick="numpadPress('7')" class="numpad-key">7</button>
+        <button type="button" onclick="numpadPress('8')" class="numpad-key">8</button>
+        <button type="button" onclick="numpadPress('9')" class="numpad-key">9</button>
+        <button type="button" onclick="numpadPress('C')" class="numpad-key text-red-400">C</button>
+        <button type="button" onclick="numpadPress('0')" class="numpad-key">0</button>
+        <button type="button" onclick="numpadPress('⌫')" class="numpad-key text-slate-300">⌫</button>
+      </div>
+      <div class="p-3 pt-0">
+        <button type="button" onclick="confirmNumpad()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl text-sm transition active:scale-[0.98]">
+          Valider
+        </button>
+      </div>
+    </div>
+  </div>
+<div id="app-dialog-modal" class="hidden fixed inset-0 z-[110] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 w-full max-w-sm rounded-xl p-5 shadow-2xl relative">
+    <div class="flex items-start gap-3">
+      <div id="app-dialog-icon" class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold bg-blue-500/20 text-blue-400 border border-blue-500/40">
+        ℹ
+      </div>
+      <div class="flex-1 min-w-0">
+        <h3 id="app-dialog-title" class="text-sm font-black text-white mb-1">Information</h3>
+        <p id="app-dialog-message" class="text-xs text-slate-300 whitespace-pre-line leading-relaxed"></p>
+      </div>
+    </div>
+    <div class="flex gap-2 pt-4">
+      <button id="app-dialog-cancel" type="button" class="hidden flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-2 rounded-lg text-xs font-bold transition">Annuler</button>
+      <button id="app-dialog-confirm" type="button" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 py-2 rounded-lg text-xs font-bold transition">OK</button>
+    </div>
+  </div>
+</div>
+
+  <script>
+
+    // SYNTHÉTISEUR AUDIO WEB AUDIO API
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const resetSound = new Audio('https://orangefreesounds.com/wp-content/uploads/2026/01/Cash-register-cha-ching-sound-effect.mp3');
+    resetSound.preload = 'auto';
+    function playSound(type) {
+      if (state.soundEnabled === false) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      } 
+      else if (type === 'admin') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.setValueAtTime(800, now + 0.04);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } 
+      else if (type === 'reset') {
+        resetSound.currentTime = 0;
+        resetSound.play().catch(err => console.warn('Lecture reset sound impossible :', err));
+      } 
+      else if (type === 'open') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.08);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+      else if (type === 'save') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.06);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+      else if (type === 'delete') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(250, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.12);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+      else if (type === 'close') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.04);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.04);
+      }
+      else if (type === 'tab') {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(540, now + 0.03);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.03);
+      }
+    }
+    function vibrate(pattern) {
+      if (!state.vibrationEnabled) return;
+      if (navigator.vibrate) navigator.vibrate(pattern);
+    }
+    function animateTotalFromTo(from, to) {
+      const el = document.getElementById('saloon-total-sum');
+      if (!el) return;
+      if (currentTotalAnimation) cancelAnimationFrame(currentTotalAnimation);
+      if (from === to) {
+        el.textContent = `${to} Da`;
+        currentTotalAnimation = null;
+        return;
+      }
+      const duration = 300;
+      const startTime = performance.now();
+      function step(t) {
+        const p = Math.min(1, (t - startTime) / duration);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const val = from + (to - from) * eased;
+        el.textContent = `${Math.round(val)} Da`;
+        if (p < 1) {
+          currentTotalAnimation = requestAnimationFrame(step);
+        } else {
+          el.textContent = `${to} Da`;
+          currentTotalAnimation = null;
+        }
+      }
+      currentTotalAnimation = requestAnimationFrame(step);
+    }
+    function computeMargin(price, cost) {
+      const p = Number(price) || 0;
+      const c = Number(cost) || 0;
+      const amount = Math.round(p - c);
+      const percent = p > 0 ? Math.round((amount / p) * 100) : 0;
+      return { amount, percent };
+    }
+    function updateMarginDisplay() {
+      const priceEl = document.getElementById('input-price');
+      const costEl = document.getElementById('input-cost');
+      const out = document.getElementById('margin-display');
+      if (!priceEl || !costEl || !out) return;
+      if (!state.showCost) {
+        out.classList.add('hidden');
+        return;
+      }
+      const costRaw = costEl.value;
+      if (costRaw === '') {
+        out.classList.add('hidden');
+        out.textContent = '';
+        return;
+      }
+      const m = computeMargin(priceEl.value, costRaw);
+      out.textContent = `Marge : \( {m.amount} Da ( \){m.percent}%)`;
+      out.className = `text-[10px] font-mono mt-1 ${m.amount >= 0 ? 'text-emerald-400/80' : 'text-red-400'}`;
+    }
+    function flashTile(tileIndex, qty) {
+      const tile = document.querySelector(`#grid > div[data-tile-index="${tileIndex}"]`);
+      if (!tile) return;
+      tile.classList.remove('tile-flash');
+      void tile.offsetWidth;
+      tile.classList.add('tile-flash');
+      const plusOne = document.createElement('span');
+      plusOne.className = 'tile-plus-one';
+      plusOne.textContent = '+' + qty;
+      plusOne.style.left = '50%';
+      plusOne.style.top = '50%';
+      tile.appendChild(plusOne);
+      setTimeout(() => plusOne.remove(), 650);
+    }
+    function showToast(message, type = 'error') {
+      let toast = document.getElementById('app-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      // Style selon le type
+      if (type === 'success') {
+        toast.style.background = 'linear-gradient(135deg, #064e3b, #065f46)';
+        toast.style.borderColor = '#10b981';
+        toast.style.color = '#d1fae5';
+      } else {
+        toast.style.background = '#7f1d1d';
+        toast.style.borderColor = '#ef4444';
+        toast.style.color = '#fee2e2';
+      }
+      toast.classList.add('show');
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+function showAppDialog(options = {}) {
+  const modal = document.getElementById('app-dialog-modal');
+  const iconEl = document.getElementById('app-dialog-icon');
+  const titleEl = document.getElementById('app-dialog-title');
+  const msgEl = document.getElementById('app-dialog-message');
+  const confirmBtn = document.getElementById('app-dialog-confirm');
+  const cancelBtn = document.getElementById('app-dialog-cancel');
+
+  const type = options.type || 'info';
+  const titles = { info: 'Information', success: 'Succès', warning: 'Attention', error: 'Erreur', confirm: 'Confirmation' };
+  const icons = { info: 'ℹ', success: '✓', warning: '⚠', error: '✕', confirm: '?' };
+  const colors = {
+    info: 'bg-blue-500/20 text-blue-400 border border-blue-500/40',
+    success: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40',
+    warning: 'bg-amber-500/20 text-amber-400 border border-amber-500/40',
+    error: 'bg-red-500/20 text-red-400 border border-red-500/40',
+    confirm: 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+  };
+
+  titleEl.textContent = options.title || titles[type] || 'Information';
+  msgEl.textContent = options.message || '';
+  iconEl.textContent = icons[type] || 'ℹ';
+  iconEl.className = 'shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ' + (colors[type] || colors.info);
+
+  confirmBtn.textContent = options.confirmText || 'OK';
+  confirmBtn.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition ' + (
+    options.danger === true
+      ? 'bg-red-600 hover:bg-red-500 text-white'
+      : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+  );
+
+  if (type === 'confirm') {
+    cancelBtn.classList.remove('hidden');
+    cancelBtn.textContent = options.cancelText || 'Annuler';
+  } else {
+    cancelBtn.classList.add('hidden');
+  }
+
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      modal.classList.add('hidden');
+      confirmBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+
+    confirmBtn.onclick = () => {
+      playSound(options.danger === true ? 'delete' : 'save');
+      cleanup();
+      resolve(true);
+    };
+    cancelBtn.onclick = () => {
+      playSound('close');
+      cleanup();
+      resolve(false);
+    };
+
+    modal.classList.remove('hidden');
+    playSound('open');
+  });
+}
+    function setDiscount(rawValue) {
+      const val = Math.max(0, Number(rawValue) || 0);
+      state.discount = Math.round(val);
+      localStorage.setItem('saloon_discount', String(state.discount));
+
+      // Pas d'appel à render() ici : reconstruire saloon.innerHTML détruirait
+      // l'input en cours d'édition et fermerait le clavier mobile.
+
+      const totalSumEl = document.getElementById('saloon-total-sum');
+      const subtotalEl = document.getElementById('saloon-subtotal-line');
+      const discountEl = document.getElementById('saloon-discount-line');
+      const subtotalValEl = document.getElementById('saloon-subtotal-val');
+      const discountValEl = document.getElementById('saloon-discount-val');
+
+      const subtotal = state.ticket.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const discountAmt = state.discountEnabled ? Math.min(state.discount, subtotal) : 0;
+      const finalSum = Math.max(0, subtotal - discountAmt);
+      const newTotalRounded = Math.round(finalSum);
+
+      if (totalSumEl) {
+        animateTotalFromTo(state.lastDisplayedTotal || 0, newTotalRounded);
+      }
+      state.lastDisplayedTotal = newTotalRounded;
+
+      if (discountAmt > 0) {
+        if (subtotalEl) subtotalEl.classList.remove('hidden');
+        if (discountEl) discountEl.classList.remove('hidden');
+        if (subtotalValEl) subtotalValEl.textContent = `${Math.round(subtotal)} Da`;
+        if (discountValEl) discountValEl.textContent = `-${Math.round(discountAmt)} Da`;
+      } else {
+        if (subtotalEl) subtotalEl.classList.add('hidden');
+        if (discountEl) discountEl.classList.add('hidden');
+      }
+    }
+    
+    function toggleDiscount(enabled) {
+      state.discountEnabled = !!enabled;
+      localStorage.setItem('saloon_discount_enabled', JSON.stringify(state.discountEnabled));
+      playSound('tab');
+    }
+
+    function updateNavBadge() {
+      const badge = document.getElementById('nav-saloon-badge');
+      if (!badge) return;
+      const count = state.ticket.reduce((sum, item) => sum + item.qty, 0);
+      /*#BLOC:code:if(count>0)*/
+      if (count > 0) {
+        badge.textContent = String(count);
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+      /*#FIN:code:if(count>0)*/
+
+      // Badge retiré de la nav Recette : élément absent du DOM, aucun effet.
+    }
+    function animateValue(elementId, from, to, suffix) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const fmt = (v) => Math.round(v) + (suffix || '');
+      if (from === to) {
+        el.textContent = fmt(to);
+        return;
+      }
+      const duration = 350;
+      const startTime = performance.now();
+      el.textContent = fmt(from);
+      function step(t) {
+        const p = Math.min(1, (t - startTime) / duration);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(from + (to - from) * eased);
+        if (p < 1) {
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = fmt(to);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+    function rippleTile(tileIndex, event) {
+      const tile = document.querySelector(`#grid > div[data-tile-index="${tileIndex}"]`);
+      if (!tile) return;
+      const rect = tile.getBoundingClientRect();
+      let x = rect.width / 2;
+      let y = rect.height / 2;
+      if (event && event.clientX) {
+        x = event.clientX - rect.left;
+        y = event.clientY - rect.top;
+      }
+      const span = document.createElement('span');
+      span.className = 'tile-ripple-effect';
+      span.style.left = x + 'px';
+      span.style.top = y + 'px';
+      tile.appendChild(span);
+      setTimeout(() => span.remove(), 600);
+    }
+function findNearestTileIndex(clientX, clientY) {
+  const tiles = document.querySelectorAll('#grid > div[data-tile-index]');
+  let bestIdx = null;
+  let bestDist = Infinity;
+  tiles.forEach(tile => {
+    const r = tile.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dist = Math.hypot(clientX - cx, clientY - cy);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIdx = Number(tile.dataset.tileIndex);
+    }
+  });
+  // Aimantation : seulement si on est assez proche du centre d'une case
+  return bestDist < 110 ? bestIdx : null;
+}
+function swapProducts(fromIndex, toIndex) {
+  if (fromIndex === toIndex) return false;
+  const temp = state.products[fromIndex];
+  if (state.products[toIndex] !== undefined) {
+    state.products[fromIndex] = state.products[toIndex];
+  } else {
+    delete state.products[fromIndex];
+  }
+  if (temp !== undefined) {
+    state.products[toIndex] = temp;
+  } else {
+    delete state.products[toIndex];
+  }
+  saveProductsToStorage();
+  return true;
+}
+function startTileDrag(fromIndex, event) {
+  if (dragState) return;
+  const originTile = document.querySelector(`#grid > div[data-tile-index="${fromIndex}"]`);
+  if (!originTile) return;
+
+  const rect = originTile.getBoundingClientRect();
+  const clone = originTile.cloneNode(true);
+  clone.classList.remove('tile-flash', 'low-stock-pulse', 'tile-origin-dragging');
+  clone.classList.add('tile-clone');
+  clone.style.width = rect.width + 'px';
+  clone.style.height = rect.height + 'px';
+  clone.style.left = rect.left + 'px';
+  clone.style.top = rect.top + 'px';
+  // Centrer le clone sous le doigt
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  document.body.appendChild(clone);
+
+  originTile.classList.add('tile-origin-dragging');
+
+  dragState = {
+    fromIndex,
+    clone,
+    originTile,
+    offsetX,
+    offsetY,
+    currentTarget: null
+  };
+
+  playSound('click');
+  vibrate(12);
+
+  // Écouteurs globaux
+  document.addEventListener('pointermove', onTileDragMove, { passive: false });
+  document.addEventListener('pointerup', endTileDrag);
+  document.addEventListener('pointercancel', endTileDrag);
+}
+function onTileDragMove(e) {
+  if (!dragState) return;
+  e.preventDefault();
+
+  const { clone, offsetX, offsetY } = dragState;
+  clone.style.left = (e.clientX - offsetX) + 'px';
+  clone.style.top = (e.clientY - offsetY) + 'px';
+
+  // Aimantation visuelle
+  const nearest = findNearestTileIndex(e.clientX, e.clientY);
+  const tiles = document.querySelectorAll('#grid > div[data-tile-index]');
+  tiles.forEach(t => t.classList.remove('tile-drop-target'));
+
+  if (nearest !== null && nearest !== dragState.fromIndex) {
+    const targetEl = document.querySelector(`#grid > div[data-tile-index="${nearest}"]`);
+    if (targetEl) {
+      targetEl.classList.add('tile-drop-target');
+      dragState.currentTarget = nearest;
+    }
+  } else {
+    dragState.currentTarget = null;
+  }
+}
+function endTileDrag(e) {
+  if (!dragState) return;
+
+  document.removeEventListener('pointermove', onTileDragMove);
+  document.removeEventListener('pointerup', endTileDrag);
+  document.removeEventListener('pointercancel', endTileDrag);
+
+  const { fromIndex, clone, originTile, currentTarget } = dragState;
+
+  // Nettoyage visuel
+  if (clone && clone.parentNode) clone.remove();
+  if (originTile) originTile.classList.remove('tile-origin-dragging');
+  document.querySelectorAll('.tile-drop-target').forEach(t => t.classList.remove('tile-drop-target'));
+
+  let didSwap = false;
+  if (currentTarget !== null && currentTarget !== fromIndex) {
+    didSwap = swapProducts(fromIndex, currentTarget);
+    if (didSwap) {
+      playSound('save');
+      vibrate([8, 30, 8]);
+    }
+  }
+
+  dragState = null;
+  render(); // toujours re-render pour remettre les bons styles
+  if (didSwap && state.activeTab === 'stock') renderStockView();
+}
+    function moveNavIndicator(tabId) {
+      const indicator = document.getElementById('nav-indicator');
+      const btn = document.getElementById('nav-' + tabId);
+      const nav = document.getElementById('main-nav');
+      if (!indicator || !btn || !nav) return;
+      const btnRect = btn.getBoundingClientRect();
+      const navRect = nav.getBoundingClientRect();
+      const center = btnRect.left - navRect.left + btnRect.width / 2;
+      indicator.style.left = center + 'px';
+    }
+    function applyTabTint(tabId) {
+      const app = document.getElementById('app-content');
+      if (!app) return;
+      app.classList.remove('tint-saloon', 'tint-stock', 'tint-graphs', 'tint-recette', 'tint-options');
+      app.classList.add('tint-' + tabId);
+    }
+    function updateDailyGoalBar() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayTotal = state.salesHistory
+        .filter(s => s.date === todayStr)
+        .reduce((sum, s) => sum + s.total, 0);
+      const goal = state.dailyGoal || 0;
+      const percent = goal > 0 ? Math.min(100, (todayTotal / goal) * 100) : 0;
+
+      const fill = document.getElementById('daily-goal-fill');
+      const pctEl = document.getElementById('daily-goal-percent');
+      const targetEl = document.getElementById('daily-goal-target');
+      const totalEl = document.getElementById('daily-goal-current');
+
+      if (fill) {
+        fill.style.width = percent + '%';
+        fill.classList.remove('goal-low', 'goal-mid', 'goal-high', 'goal-done');
+        if (percent >= 100) fill.classList.add('goal-done');
+        else if (percent >= 75) fill.classList.add('goal-high');
+        else if (percent >= 40) fill.classList.add('goal-mid');
+        else fill.classList.add('goal-low');
+      }
+      if (pctEl) pctEl.textContent = Math.round(percent) + '%';
+      if (targetEl) targetEl.textContent = goal.toLocaleString('fr-FR') + ' Da';
+      if (totalEl) totalEl.textContent = Math.round(todayTotal).toLocaleString('fr-FR') + ' Da';
+    }
+    function saveDailyGoal(rawValue) {
+      const val = Math.max(0, Math.round(Number(rawValue) || 0));
+      state.dailyGoal = val;
+      localStorage.setItem('saloon_daily_goal', String(val));
+      playSound('save');
+      if (state.activeTab === 'recette') updateDailyGoalBar();
+    }
+    function applyAmbience() {
+      const el = document.getElementById('saloon-ambience');
+      if (!el) return;
+      el.classList.toggle('hidden', !state.ambienceEnabled);
+    }
+    function toggleAmbience(input) {
+      state.ambienceEnabled = input.checked;
+      localStorage.setItem('saloon_ambience', JSON.stringify(state.ambienceEnabled));
+      playSound('tab');
+      applyAmbience();
+    }
+function setGridMode(mode) {
+if (!['compact', 'normal', 'grand', 'custom'].includes(mode)) return;
+state.gridMode = mode;
+state.currentPage = 0;
+localStorage.setItem('saloon_grid_mode', mode);
+playSound('tab');
+updateModeButtons();
+
+const builder = document.getElementById('custom-builder');
+  if (builder) {
+    builder.classList.toggle('hidden', mode !== 'custom');
+    if (mode === 'custom') {
+      if (state.customGrid) {
+        document.getElementById('custom-cols').value = state.customGrid.cols;
+        document.getElementById('custom-rows').value = state.customGrid.rows;
+        customRect = state.customGrid.rect ? { ...state.customGrid.rect } : null;
+      }
+      updateCustomBuilder();
+    }
+  }
+
+  // Aucune réindexation : les positions des produits sont préservées.
+  // Les produits qui dépassent la capacité du mode sont simplement masqués
+  // et réapparaissent lorsqu'on revient à un mode compatible.
+
+  render();
+}
+    function updateModeButtons() {
+      ['compact', 'normal', 'grand', 'custom'].forEach(m => {
+        const btn = document.getElementById('mode-btn-' + m);
+        if (!btn) return;
+        if (state.gridMode === m) {
+          btn.className = 'py-1.5 text-[10px] font-bold uppercase rounded-md transition bg-amber-500 text-slate-950 shadow';
+        } else {
+          btn.className = 'py-1.5 text-[10px] font-bold uppercase rounded-md transition text-slate-400 hover:text-white';
+        }
+      });
+    }
+    // Rectangle de la feuille de calcul dans le constructeur (1-based)
+    let customRect = null; // { c1, c2, r1, r2 } ou null
+    function updateCustomBuilder() {
+      const cols = Math.max(4, Math.min(8, parseInt(document.getElementById('custom-cols').value) || 6));
+      const rows = Math.max(6, Math.min(12, parseInt(document.getElementById('custom-rows').value) || 10));
+      document.getElementById('custom-cols').value = cols;
+      document.getElementById('custom-rows').value = rows;
+
+      const preview = document.getElementById('custom-grid-preview');
+      const cellSize = 26; // plus grand pour la maniabilité
+      preview.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+      preview.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+      preview.innerHTML = '';
+
+      for (let r = 1; r <= rows; r++) {
+        for (let c = 1; c <= cols; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'rounded-md cursor-pointer transition-all border border-slate-700 active:scale-90';
+          cell.style.width = cellSize + 'px';
+          cell.style.height = cellSize + 'px';
+          const isSelected = customRect && c >= customRect.c1 && c <= customRect.c2 && r >= customRect.r1 && r <= customRect.r2;
+          cell.style.background = isSelected ? '#f59e0b' : '#1e293b';
+          cell.onclick = () => toggleCustomCell(c, r, cols, rows);
+          preview.appendChild(cell);
+        }
+      }
+    }
+    function toggleCustomCell(c, r, cols, rows) {
+      if (!customRect) {
+        // Premier clic → démarre un rectangle 1×1
+        customRect = { c1: c, c2: c, r1: r, r2: r };
+      } else {
+        // Vérifier si on peut étendre / réduire en gardant un rectangle
+        const { c1, c2, r1, r2 } = customRect;
+        const inRect = c >= c1 && c <= c2 && r >= r1 && r <= r2;
+
+        if (inRect) {
+          // Clic à l'intérieur → on essaie de réduire (uniquement si on clique sur un bord)
+          // Pour simplifier et rester robuste : si le rectangle > 1 case, on le réduit au bord cliqué
+          if (c1 === c2 && r1 === r2) {
+            // Une seule case → on l'enlève
+            customRect = null;
+          } else if (c === c1 && c1 < c2) {
+            customRect.c1++;
+          } else if (c === c2 && c1 < c2) {
+            customRect.c2--;
+          } else if (r === r1 && r1 < r2) {
+            customRect.r1++;
+          } else if (r === r2 && r1 < r2) {
+            customRect.r2--;
+          } else {
+            // Clic au milieu → on ignore (pour garder le rectangle)
+            playSound('delete');
+            return;
+          }
+        } else {
+          // Clic à l'extérieur → on étend seulement si c'est adjacent au rectangle actuel
+          let newC1 = c1, newC2 = c2, newR1 = r1, newR2 = r2;
+          let canExtend = false;
+
+          if (c === c1 - 1 && r >= r1 && r <= r2) { newC1 = c; canExtend = true; }
+          else if (c === c2 + 1 && r >= r1 && r <= r2) { newC2 = c; canExtend = true; }
+          else if (r === r1 - 1 && c >= c1 && c <= c2) { newR1 = r; canExtend = true; }
+          else if (r === r2 + 1 && c >= c1 && c <= c2) { newR2 = r; canExtend = true; }
+          // Diagonales proches aussi acceptées pour plus de fluidité
+          else if (c === c1 - 1 && r === r1 - 1) { newC1 = c; newR1 = r; canExtend = true; }
+          else if (c === c2 + 1 && r === r1 - 1) { newC2 = c; newR1 = r; canExtend = true; }
+          else if (c === c1 - 1 && r === r2 + 1) { newC1 = c; newR2 = r; canExtend = true; }
+          else if (c === c2 + 1 && r === r2 + 1) { newC2 = c; newR2 = r; canExtend = true; }
+
+          if (canExtend) {
+            customRect = { c1: newC1, c2: newC2, r1: newR1, r2: newR2 };
+          } else {
+            playSound('delete');
+            return;
+          }
+        }
+      }
+      playSound('click');
+      updateCustomBuilder();
+    }
+    function clearCustomRect() {
+      customRect = null;
+      updateCustomBuilder();
+      playSound('tab');
+    }
+function applyCustomGrid() {
+  const cols = parseInt(document.getElementById('custom-cols').value) || 6;
+  const rows = parseInt(document.getElementById('custom-rows').value) || 10;
+
+  if (!customRect) {
+    showToast('Colorez au moins une zone pour la feuille de calcul');
+    return;
+  }
+
+  // Aucune réindexation : les positions des produits sont préservées.
+
+  state.customGrid = {
+    cols,
+    rows,
+    rect: { ...customRect }
+  };
+localStorage.setItem('saloon_custom_grid', JSON.stringify(state.customGrid));
+state.gridMode = 'custom';
+state.currentPage = 0;
+localStorage.setItem('saloon_grid_mode', 'custom');
+updateModeButtons();
+playSound('save');
+render();
+showToast('Grille personnalisée appliquée', 'success');
+}
+    function stepCustomDim(dim, delta) {
+      const el = document.getElementById(dim === 'cols' ? 'custom-cols' : 'custom-rows');
+      if (!el) return;
+      const min = dim === 'cols' ? 4 : 6;
+      const max = dim === 'cols' ? 8 : 12;
+      let val = parseInt(el.value) || (dim === 'cols' ? 6 : 10);
+      val = Math.max(min, Math.min(max, val + delta));
+      el.value = val;
+      // Si le rectangle dépasse les nouvelles dimensions, on le recadre
+      if (customRect) {
+        if (dim === 'cols' && customRect.c2 > val) customRect.c2 = val;
+        if (dim === 'rows' && customRect.r2 > val) customRect.r2 = val;
+        if (dim === 'cols' && customRect.c1 > val) customRect = null;
+        if (dim === 'rows' && customRect.r1 > val) customRect = null;
+      }
+      playSound('tab');
+      updateCustomBuilder();
+    }
+// Les positions des produits sont préservées à travers tous les changements de mode.
+// Cette fonction ne réindexe plus : elle est conservée pour compatibilité des appels.
+function compactProducts(maxSlots) {
+  const entries = Object.entries(state.products)
+    .map(([k, v]) => ({ key: Number(k), prod: v }))
+    .filter(e => e.prod && e.prod.name)
+    .sort((a, b) => a.key - b.key);
+
+  const newProducts = {};
+  const limit = 0; // Désactivé : aucune réindexation, aucune suppression.
+  for (let i = 0; i < limit; i++) {
+    newProducts[i] = entries[i].prod;
+  }
+  // state.products n'est plus réassigné et saveProductsToStorage() n'est plus appelé ici :
+  // les positions (indices) de chaque produit restent intactes entre les modes.
+}
+let onboardingSelectedMode = 'normal';
+function selectOnboardingMode(mode) {
+  onboardingSelectedMode = mode;
+  ['compact', 'normal', 'grand'].forEach(m => {
+    const el = document.getElementById('onboard-' + m);
+    if (!el) return;
+    el.classList.toggle('selected', m === mode);
+  });
+  playSound('tab');
+}
+function confirmOnboardingMode() {
+  if (!onboardingSelectedMode) {
+    onboardingSelectedMode = 'normal';
+  }
+  setGridMode(onboardingSelectedMode);
+  const dontShow = document.getElementById('onboard-dont-show')?.checked;
+  if (dontShow) {
+    localStorage.setItem('saloon_mode_onboarding_seen', '1');
+  }
+  document.getElementById('mode-onboarding-modal').classList.add('hidden');
+  playSound('save');
+}
+function showModeOnboardingIfNeeded() {
+  if (localStorage.getItem('saloon_mode_onboarding_seen') === '1') return;
+  onboardingSelectedMode = null;
+  ['compact', 'normal', 'grand'].forEach(m => {
+    const el = document.getElementById('onboard-' + m);
+    if (el) el.classList.remove('selected');
+  });
+  document.getElementById('mode-onboarding-modal').classList.remove('hidden');
+}
+    function bumpTotalSum() {
+      const el = document.getElementById('saloon-total-sum');
+      if (!el) return;
+      el.classList.remove('total-bump');
+      void el.offsetWidth;
+      el.classList.add('total-bump');
+      setTimeout(() => el.classList.remove('total-bump'), 400);
+    }
+    function playResetEffect(total) {
+      const flash = document.createElement('div');
+      flash.className = 'reset-flash-overlay';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 600);
+      const colors = ['#f59e0b', '#fbbf24', '#f97316', '#eab308', '#facc15', '#fde68a'];
+      const count = 14;
+      for (let i = 0; i < count; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = (50 + (Math.random() - 0.5) * 24) + '%';
+        c.style.top = '45%';
+        c.style.background = colors[i % colors.length];
+        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        c.style.setProperty('--tx', ((Math.random() - 0.5) * 320) + 'px');
+        c.style.setProperty('--ty', (-80 - Math.random() * 220) + 'px');
+        c.style.animationDelay = (Math.random() * 0.12) + 's';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 1100);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'sale-toast';
+      toast.innerHTML = `
+        <div style="font-size: 22px; line-height: 1;">✓</div>
+        <div style="font-size: 18px; margin-top: 4px;">${total} Da</div>
+        <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; opacity: 0.7;">Vente enregistrée</div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1300);
+    }
+    function cycleStockSort() {
+      const order = ['name', 'price', 'stock', 'alert'];
+      const idx = order.indexOf(state.stockSort);
+      state.stockSort = order[(idx + 1) % order.length];
+      playSound('tab');
+      renderStockView();
+    }
+    function toggleStockLowFilter() {
+      state.stockLowOnly = !state.stockLowOnly;
+      playSound('tab');
+      renderStockView();
+    }
+    function isStockBlocked(product) {
+      if (!product) return true;
+      if (product.stock === undefined || product.stock === null || product.stock === '') {
+        return false;
+      }
+      /*#BLOC:code:return_Number(product.stock)<=0*/
+      return Number(product.stock) <= 0;
+      /*#FIN:code:return_Number(product.stock)<=0*/
+    }
+
+    // Disposition fixe des carreaux en fonction du mode compact ou standard
+    const TILE_POSITIONS_STANDARD = [
+      { r: 1, c: 1 }, { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 }, { r: 1, c: 5 }, { r: 1, c: 6 },
+      { r: 2, c: 1 }, { r: 2, c: 2 }, { r: 2, c: 3 }, { r: 2, c: 4 }, { r: 2, c: 5 }, { r: 2, c: 6 },
+      { r: 3, c: 1 }, { r: 3, c: 6 },
+      { r: 4, c: 1 }, { r: 4, c: 6 },
+      { r: 5, c: 1 }, { r: 5, c: 6 },
+      { r: 6, c: 1 }, { r: 6, c: 6 },
+      { r: 7, c: 1 }, { r: 7, c: 6 },
+      { r: 8, c: 1 }, { r: 8, c: 6 },
+      { r: 9, c: 1 }, { r: 9, c: 6 },
+      { r: 10, c: 1 }, { r: 10, c: 6 }
+    ];
+    // Compact 5×9 – carreaux grands + densifié
+    const TILE_POSITIONS_COMPACT = [
+      // Rangées 1-2 pleines
+      { r: 1, c: 1 }, { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 }, { r: 1, c: 5 },
+      { r: 2, c: 1 }, { r: 2, c: 2 }, { r: 2, c: 3 }, { r: 2, c: 4 }, { r: 2, c: 5 },
+      // Côtés (rangs 3 à 8)
+      { r: 3, c: 1 }, { r: 3, c: 5 },
+      { r: 4, c: 1 }, { r: 4, c: 5 },
+      { r: 5, c: 1 }, { r: 5, c: 5 },
+      { r: 6, c: 1 }, { r: 6, c: 5 },
+      { r: 7, c: 1 }, { r: 7, c: 5 },
+      { r: 8, c: 1 }, { r: 8, c: 5 },
+      // Rangée 9 (bas)
+      { r: 9, c: 1 }, { r: 9, c: 2 }, { r: 9, c: 3 }, { r: 9, c: 4 }, { r: 9, c: 5 }
+    ];
+    // Grand 7×10 – plus de slots tout en gardant des carreaux utilisables
+    const TILE_POSITIONS_GRAND = [
+      // Rangées 1-2 pleines
+      { r: 1, c: 1 }, { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 }, { r: 1, c: 5 }, { r: 1, c: 6 }, { r: 1, c: 7 },
+      { r: 2, c: 1 }, { r: 2, c: 2 }, { r: 2, c: 3 }, { r: 2, c: 4 }, { r: 2, c: 5 }, { r: 2, c: 6 }, { r: 2, c: 7 },
+      // Côtés (rangs 3 à 9)
+      { r: 3, c: 1 }, { r: 3, c: 7 },
+      { r: 4, c: 1 }, { r: 4, c: 7 },
+      { r: 5, c: 1 }, { r: 5, c: 7 },
+      { r: 6, c: 1 }, { r: 6, c: 7 },
+      { r: 7, c: 1 }, { r: 7, c: 7 },
+      { r: 8, c: 1 }, { r: 8, c: 7 },
+      { r: 9, c: 1 }, { r: 9, c: 7 },
+      // Rangée 10 (bas)
+      { r: 10, c: 1 }, { r: 10, c: 2 }, { r: 10, c: 3 }, { r: 10, c: 4 }, { r: 10, c: 5 }, { r: 10, c: 6 }, { r: 10, c: 7 }
+    ];
+
+
+    const TILE_POSITIONS = TILE_POSITIONS_STANDARD;
+
+let state = {
+  activeTab: 'saloon',
+  isAdmin: false,
+  soundEnabled: JSON.parse(localStorage.getItem('saloon_sound') ?? 'true'),
+  vibrationEnabled: JSON.parse(localStorage.getItem('saloon_vibration') ?? 'true'),
+  easyVisionEnabled: JSON.parse(localStorage.getItem('saloon_easy_vision') ?? 'false'),
+  largeTextEnabled: JSON.parse(localStorage.getItem('saloon_large_text') ?? 'false'),
+  gridMode: localStorage.getItem('saloon_grid_mode') || 'normal',
+  customGrid: JSON.parse(localStorage.getItem('saloon_custom_grid') || 'null'),
+  showCost: JSON.parse(localStorage.getItem('saloon_show_cost') ?? 'true'),
+  showStock: JSON.parse(localStorage.getItem('saloon_show_stock') ?? 'true'),
+  showAlert: JSON.parse(localStorage.getItem('saloon_show_alert') ?? 'true'),
+  imgbbApiKey: localStorage.getItem('saloon_imgbb_key') || '',
+  products: JSON.parse(localStorage.getItem('saloon_products') || '{}'),
+  salesHistory: JSON.parse(localStorage.getItem('saloon_sales_history') || '[]'),
+  ticket: [],
+  discount: Number(localStorage.getItem('saloon_discount') || '0'),
+  discountEnabled: JSON.parse(localStorage.getItem('saloon_discount_enabled') ?? 'false'),
+  stockSort: 'name',
+  stockLowOnly: false,
+  historyFilterDate: '',
+  ambienceEnabled: JSON.parse(localStorage.getItem('saloon_ambience') ?? 'true'),
+  dailyGoal: Number(localStorage.getItem('saloon_daily_goal') || '20000'),
+  lastTicketChange: null,
+  lastDisplayedTotal: 0,
+  editingIndex: null,
+  selectedImageFile: null,
+  currentImageUrl: '',
+  currentPage: 0,
+  pageCount: Math.max(1, Number(localStorage.getItem('saloon_page_count') || '1')),
+  movingTile: null
+};
+
+    let saloonPressTimer = null;
+    let todayChartInstance = null;
+    let monthChartInstance = null;
+    let currentTotalAnimation = null;
+let dragState = null; // { fromIndex, clone, originTile, startX, startY, currentTarget }
+
+    function saveProductsToStorage() {
+      localStorage.setItem('saloon_products', JSON.stringify(state.products));
+    }
+
+    function saveSalesToStorage() {
+      localStorage.setItem('saloon_sales_history', JSON.stringify(state.salesHistory));
+    }
+
+    function toggleSoundSetting(checkbox) {
+      state.soundEnabled = checkbox.checked;
+      localStorage.setItem('saloon_sound', JSON.stringify(state.soundEnabled));
+      if (state.soundEnabled) playSound('save');
+    }
+    function toggleVibrationSetting(checkbox) {
+      state.vibrationEnabled = checkbox.checked;
+      localStorage.setItem('saloon_vibration', JSON.stringify(state.vibrationEnabled));
+      if (state.vibrationEnabled) vibrate([10, 20, 10]);
+    }
+
+    function saveImgBbKey() {
+const keyVal = document.getElementById('input-imgbb-key').value.trim();
+state.imgbbApiKey = keyVal;
+localStorage.setItem('saloon_imgbb_key', keyVal);
+playSound('save');
+showAppDialog({ type: 'success', message: 'Clé API ImgBB enregistrée avec succès !' });
+    }
+
+    function toggleEasyVision(checkbox) {
+      state.easyVisionEnabled = checkbox.checked;
+      localStorage.setItem('saloon_easy_vision', JSON.stringify(state.easyVisionEnabled));
+      playSound('tab');
+      render();
+    }
+function applyLargeText() {
+  document.documentElement.classList.toggle('large-text', !!state.largeTextEnabled);
+}
+function toggleLargeText(checkbox) {
+  state.largeTextEnabled = checkbox.checked;
+  localStorage.setItem('saloon_large_text', JSON.stringify(state.largeTextEnabled));
+  playSound('tab');
+  applyLargeText();
+}
+    function toggleRefField(field, checkbox) {
+      if (field === 'cost') {
+        state.showCost = checkbox.checked;
+        localStorage.setItem('saloon_show_cost', JSON.stringify(state.showCost));
+      } else if (field === 'stock') {
+        state.showStock = checkbox.checked;
+        localStorage.setItem('saloon_show_stock', JSON.stringify(state.showStock));
+      } else if (field === 'alert') {
+        state.showAlert = checkbox.checked;
+        localStorage.setItem('saloon_show_alert', JSON.stringify(state.showAlert));
+      }
+      playSound('tab');
+    }
+
+    function switchOptionsSubTab(subTabId) {
+      playSound('tab');
+      ['general', 'display', 'data'].forEach(t => {
+        const panel = document.getElementById(`opt-panel-${t}`);
+        const btn = document.getElementById(`opt-tab-${t}`);
+        if (!panel || !btn) return;
+        if (t === subTabId) {
+          panel.classList.remove('hidden');
+          btn.className = 'py-1.5 text-[10px] font-bold uppercase rounded-lg transition bg-amber-500 text-slate-950 shadow';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'py-1.5 text-[10px] font-bold uppercase rounded-lg transition text-slate-400 hover:text-white';
+        }
+      });
+    }
+
+    function toggleAccordion(accId) {
+      playSound('click');
+      const content = document.getElementById(accId + '-content');
+      const icon = document.getElementById(accId + '-icon');
+      if (!content) return;
+      content.classList.toggle('hidden');
+      if (icon) {
+        icon.classList.toggle('rotate-180');
+      }
+    }
+
+    // GESTION NAVIGATION ONGLETS
+    function switchTab(tabId) {
+if (state.activeTab === tabId) {
+  if (tabId === 'saloon') return;
+  tabId = 'saloon';
+}
+playSound('tab');
+const previousTab = state.activeTab;
+state.activeTab = tabId;
+
+const navOrder = ['stock', 'graphs', 'saloon', 'recette', 'options'];
+      ['saloon', 'stock', 'graphs', 'recette', 'options'].forEach(t => {
+        const view = document.getElementById(`view-${t}`);
+        const navBtn = document.getElementById(`nav-${t}`);
+        
+        view.classList.remove('view-slide-in-left', 'view-slide-in-right');
+        if (t === tabId) {
+          view.classList.remove('hidden');
+          if (previousTab && previousTab !== tabId) {
+            const prevIdx = navOrder.indexOf(previousTab);
+            const newIdx = navOrder.indexOf(tabId);
+            const dir = newIdx > prevIdx ? 'right' : 'left';
+            void view.offsetWidth;
+            view.classList.add('view-slide-in-' + dir);
+          }
+          navBtn.className = 'relative flex flex-col items-center justify-center flex-1 h-full text-amber-400 font-bold transition';
+          const svg = navBtn.querySelector('svg');
+          if (svg) {
+            svg.classList.remove('nav-pop');
+            void svg.offsetWidth;
+            svg.classList.add('nav-pop');
+            setTimeout(() => svg.classList.remove('nav-pop'), 260);
+          }
+        } else {
+          view.classList.add('hidden');
+          navBtn.className = 'relative flex flex-col items-center justify-center flex-1 h-full text-slate-500 hover:text-slate-300 transition';
+        }
+      });
+
+if (tabId === 'stock') {
+  renderStockView();
+} else if (tabId === 'graphs') {
+  renderGraphsView();
+} else if (tabId === 'recette') {
+  renderRecetteView();
+} else if (tabId === 'saloon') {
+  render();
+} else if (tabId === 'options') {
+  const soundToggle = document.getElementById('toggle-sound-input');
+  if (soundToggle) soundToggle.checked = state.soundEnabled;
+  const vibToggle = document.getElementById('toggle-vibration-input');
+  if (vibToggle) vibToggle.checked = state.vibrationEnabled;
+  const easyVisionCheckbox = document.getElementById('toggle-easyvision-input');
+  if (easyVisionCheckbox) easyVisionCheckbox.checked = state.easyVisionEnabled;
+  const largeTextCheckbox = document.getElementById('toggle-large-text-input');
+  if (largeTextCheckbox) largeTextCheckbox.checked = state.largeTextEnabled;
+  const imgbbInput = document.getElementById('input-imgbb-key');
+  if (imgbbInput) imgbbInput.value = state.imgbbApiKey;
+  const ambienceToggle = document.getElementById('toggle-ambience-input');
+  if (ambienceToggle) ambienceToggle.checked = state.ambienceEnabled;
+  const goalInput = document.getElementById('input-daily-goal');
+  if (goalInput) goalInput.value = state.dailyGoal;
+
+  // Toggles Référence
+  const costToggle = document.getElementById('toggle-show-cost');
+  const stockToggle = document.getElementById('toggle-show-stock');
+  const alertToggle = document.getElementById('toggle-show-alert');
+  if (costToggle) costToggle.checked = state.showCost;
+  if (stockToggle) stockToggle.checked = state.showStock;
+  if (alertToggle) alertToggle.checked = state.showAlert;
+
+  updateModeButtons();
+  const builder = document.getElementById('custom-builder');
+  if (builder) {
+    builder.classList.toggle('hidden', state.gridMode !== 'custom');
+    if (state.gridMode === 'custom') {
+      if (state.customGrid) {
+        const colsInput = document.getElementById('custom-cols');
+        const rowsInput = document.getElementById('custom-rows');
+        if (colsInput) colsInput.value = state.customGrid.cols;
+        if (rowsInput) rowsInput.value = state.customGrid.rows;
+        customRect = state.customGrid.rect ? { ...state.customGrid.rect } : null;
+      }
+      updateCustomBuilder();
+    }
+  }
+  refreshHistorySizeLabel();
+}
+
+      updateNavBadge();
+
+      applyTabTint(tabId);
+
+      moveNavIndicator(tabId);
+    }
+
+    // TRAITEMENT ET UPLOAD IMGBB
+    async function processAndUploadImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = async function() {
+            // Redimensionnement & Compression Canvas (Max 500x500)
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 500;
+
+            if (width > height) {
+              if (width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL('image/png');
+
+            if (!state.imgbbApiKey) {
+              resolve(compressedBase64);
+              return;
+            }
+
+            try {
+              const base64Data = compressedBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+              const formData = new FormData();
+              formData.append('image', base64Data);
+
+              const response = await fetch(`https://api.imgbb.com/1/upload?key=${state.imgbbApiKey}`, {
+                method: 'POST',
+                body: formData
+              });
+
+              const data = await response.json();
+              if (data && data.success) {
+                resolve(data.data.url);
+              } else {
+                console.warn('Erreur ImgBB, repli sur base64 local', data);
+                resolve(compressedBase64);
+              }
+            } catch (err) {
+              console.error('Erreur réseau ImgBB, repli sur base64 local', err);
+              resolve(compressedBase64);
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // VUE STOCK
+    function renderStockView() {
+      const stockList = document.getElementById('stock-list');
+      const stockBadge = document.getElementById('stock-count-badge');
+      const searchVal = (document.getElementById('stock-search').value || '').toLowerCase();
+
+      const lowFilterBtn = document.getElementById('stock-low-filter-btn');
+      if (lowFilterBtn) {
+        if (state.stockLowOnly) {
+          lowFilterBtn.classList.add('border-red-500/60', 'text-red-300', 'bg-red-950/30');
+          lowFilterBtn.classList.remove('text-slate-300');
+        } else {
+          lowFilterBtn.classList.remove('border-red-500/60', 'text-red-300', 'bg-red-950/30');
+          lowFilterBtn.classList.add('text-slate-300');
+        }
+      }
+
+      stockList.innerHTML = '';
+
+      const items = Object.entries(state.products)
+        .map(([index, prod]) => ({ index: Number(index), ...prod }))
+        .filter(item => item.name.toLowerCase().includes(searchVal))
+        .filter(item => {
+          if (!state.stockLowOnly) return true;
+          const hasStock = item.stock !== undefined && item.stock !== null && item.stock !== '';
+          const hasAlert = item.alert !== undefined && item.alert !== null && item.alert !== '';
+          if (hasStock && Number(item.stock) <= 0) return true;
+          if (hasStock && hasAlert && Number(item.stock) < Number(item.alert)) return true;
+          return false;
+        })
+        .sort((a, b) => {
+          switch (state.stockSort) {
+            case 'price':
+              return Number(b.price || 0) - Number(a.price || 0);
+            case 'stock': {
+              const sa = (a.stock === '' || a.stock === undefined || a.stock === null) ? Infinity : Number(a.stock);
+              const sb = (b.stock === '' || b.stock === undefined || b.stock === null) ? Infinity : Number(b.stock);
+              return sa - sb;
+            }
+            case 'alert': {
+              const aa = (a.alert === '' || a.alert === undefined || a.alert === null) ? Infinity : Number(a.alert);
+              const ab = (b.alert === '' || b.alert === undefined || b.alert === null) ? Infinity : Number(b.alert);
+              return aa - ab;
+            }
+            case 'name':
+            default:
+              return a.name.localeCompare(b.name);
+          }
+        });
+
+      const sortLabel = ({ name: 'A→Z', price: 'Prix', stock: 'Stock', alert: 'Alerte' })[state.stockSort] || '';
+      const filterLabel = state.stockLowOnly ? ' · ⚠' : '';
+      stockBadge.textContent = `${items.length} Réf. · ${sortLabel}${filterLabel}`;
+      stockBadge.classList.add('cursor-pointer');
+      stockBadge.onclick = cycleStockSort;
+      stockBadge.title = 'Trier (Nom → Prix → Stock → Alerte)';
+
+      if (items.length === 0) {
+        stockList.innerHTML = `
+          <div class="h-40 flex flex-col items-center justify-center text-slate-600 text-xs italic">
+            <span>Aucun produit trouvé</span>
+            <span class="text-[10px] text-slate-700 mt-1">Configurez des produits dans le Saloon</span>
+          </div>
+        `;
+        return;
+      }
+
+      items.forEach(prod => {
+        const isLowStock = prod.stock !== undefined && prod.stock !== null && prod.stock !== '' && 
+                           prod.alert !== undefined && prod.alert !== null && prod.alert !== '' && 
+                           Number(prod.stock) < Number(prod.alert);
+
+        const card = document.createElement('div');
+        card.className = `flex items-center justify-between p-2.5 rounded-xl border transition ${
+          isLowStock 
+            ? 'bg-red-950/20 border-red-500/50 hover:border-red-400' 
+            : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+        }`;
+
+        const imgBlock = prod.image 
+          ? `<img src="${prod.image}" class="w-10 h-10 object-contain rounded-lg border border-slate-800 shrink-0">`
+          : `<div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-xs font-mono font-bold text-slate-400 shrink-0">#${prod.index + 1}</div>`;
+
+        const stockDisplay = (prod.stock !== undefined && prod.stock !== null && prod.stock !== '') 
+          ? `<span class="font-bold font-mono text-xs ${isLowStock ? 'text-red-400' : 'text-slate-200'}">${prod.stock}</span>`
+          : `<span class="text-slate-600 text-xs italic">Illimité</span>`;
+
+        const alertDisplay = (prod.alert !== undefined && prod.alert !== null && prod.alert !== '') 
+          ? `<span class="text-[10px] text-slate-500 font-mono">Min: ${prod.alert}</span>` 
+          : '';
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3 overflow-hidden">
+            ${imgBlock}
+            <div class="overflow-hidden">
+              <div class="flex items-center gap-1.5">
+                <h4 class="font-semibold text-xs text-slate-200 truncate">${prod.name}</h4>
+                ${isLowStock ? '<span class="px-1 py-0.2 bg-red-500/20 border border-red-500/40 text-red-400 text-[9px] rounded font-bold uppercase">Alerte</span>' : ''}
+              </div>
+              <p class="text-[11px] font-bold text-amber-400">${Math.round(Number(prod.price))} Da</p>
+              ${state.isAdmin && prod.cost !== undefined && prod.cost !== null && prod.cost !== ''
+                ? `<p class="text-[10px] font-mono ${Math.round(Number(prod.price) - Number(prod.cost)) >= 0 ? 'text-emerald-400/80' : 'text-red-400'}">Marge : ${Math.round(Number(prod.price) - Number(prod.cost))} Da (${Number(prod.price) > 0 ? Math.round(((Number(prod.price) - Number(prod.cost)) / Number(prod.price)) * 100) : 0}%)</p>`
+                : ''}
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="flex flex-col items-end">
+              <div class="flex items-baseline gap-1">
+                <span class="text-[10px] text-slate-500 uppercase">Stock:</span>
+                ${stockDisplay}
+              </div>
+              ${alertDisplay}
+            </div>
+            
+            <button onclick="openModal(${prod.index})" class="p-1.5 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+          </div>
+        `;
+
+        stockList.appendChild(card);
+      });
+    }
+
+    // VUE RECETTE
+    function renderRecetteView() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const recetteList = document.getElementById('recette-list');
+      const totalSumEl = document.getElementById('recette-total-sum');
+      const dateLabel = document.getElementById('recette-date-label');
+
+      dateLabel.textContent = `Opérations du ${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+      recetteList.innerHTML = '';
+
+      const todaySales = state.salesHistory
+        .map((sale, index) => ({ originalIndex: index, ...sale }))
+        .filter(sale => sale.date === todayStr)
+        .reverse();
+
+      const totalDaySum = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+      animateValue('recette-total-sum', 0, Math.round(totalDaySum), ' Da');
+      updateDailyGoalBar();
+
+      if (todaySales.length === 0) {
+        recetteList.innerHTML = `
+          <div class="h-40 flex flex-col items-center justify-center text-slate-600 text-xs italic">
+            <span>Aucune opération enregistrée aujourd'hui</span>
+            <span class="text-[10px] text-slate-700 mt-1">Réinitialisez le Saloon pour valider un ticket</span>
+          </div>
+        `;
+        return;
+      }
+
+      todaySales.forEach((sale, idx) => {
+        const operationNum = todaySales.length - idx;
+        const totalArticles = sale.items.reduce((sum, item) => sum + item.qty, 0);
+
+        const card = document.createElement('div');
+        card.onclick = () => openOperationModal(sale);
+        card.className = "flex items-center justify-between p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition active:scale-[0.99]";
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-mono font-bold text-xs">
+              #${operationNum}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-200">Opération #${operationNum}</span>
+                <span class="text-[10px] font-mono text-slate-500">${sale.time || ''}</span>
+              </div>
+              <p class="text-[11px] font-mono text-slate-400">${totalArticles} article${totalArticles > 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black font-mono text-amber-400">${Math.round(sale.total)} Da</span>
+            <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        `;
+
+        recetteList.appendChild(card);
+      });
+    }
+
+    function openOperationModal(sale) {
+      playSound('open');
+      document.getElementById('modal-op-time').textContent = `Heure : ${sale.time || 'Inconnue'} (${sale.date || ''})`;
+      animateValue('modal-op-total', 0, Math.round(sale.total), ' Da');
+
+      const itemsContainer = document.getElementById('modal-op-items');
+      itemsContainer.innerHTML = '';
+
+      if (sale.discount && sale.discount > 0) {
+        const subRow = document.createElement('div');
+        subRow.className = "flex justify-between items-center text-[10px] font-mono text-slate-400 px-2.5 pt-1";
+        subRow.innerHTML = `<span>Sous-total</span><span>${Math.round(sale.subtotal || (sale.total + sale.discount))} Da</span>`;
+        itemsContainer.appendChild(subRow);
+
+        const discRow = document.createElement('div');
+        discRow.className = "flex justify-between items-center text-[10px] font-mono text-red-400 px-2.5 pb-1 border-b border-slate-800/60";
+        discRow.innerHTML = `<span>Remise</span><span>-${Math.round(sale.discount)} Da</span>`;
+        itemsContainer.appendChild(discRow);
+      }
+
+      sale.items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = "flex justify-between items-center bg-slate-950/60 px-2.5 py-1.5 rounded border border-slate-800/80";
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-sans text-slate-200 font-medium">${item.name}</span>
+            <span class="text-[10px] text-amber-400/80 font-mono">x${item.qty}</span>
+          </div>
+          <span class="font-bold text-slate-100 font-mono">${Math.round(item.price * item.qty)} Da</span>
+        `;
+        itemsContainer.appendChild(row);
+      });
+
+      document.getElementById('operation-modal').classList.remove('hidden');
+    }
+
+    function closeOperationModal() {
+      document.getElementById('operation-modal').classList.add('hidden');
+    }
+
+    // MODALE HISTORIQUE GLOBAL (OPTIONS)
+    function openGlobalHistoryModal() {
+      playSound('open');
+      const dateInput = document.getElementById('global-history-date');
+      if (dateInput) dateInput.value = state.historyFilterDate || '';
+      renderGlobalHistoryList();
+      renderGlobalHistoryList();
+      document.getElementById('global-history-modal').classList.remove('hidden');
+    }
+
+    function closeGlobalHistoryModal() {
+      document.getElementById('global-history-modal').classList.add('hidden');
+    }
+    function filterGlobalHistory(value) {
+      state.historyFilterDate = value || '';
+      playSound('tab');
+      renderGlobalHistoryList();
+    }
+    function renderGlobalHistoryList() {
+      const listContainer = document.getElementById('global-history-list');
+      const totalEl = document.getElementById('global-history-total');
+      listContainer.innerHTML = '';
+
+      const filter = state.historyFilterDate || '';
+      const allSales = [...state.salesHistory]
+        .reverse()
+        .filter(s => !filter || s.date === filter);
+      const grandTotal = allSales.reduce((sum, s) => sum + s.total, 0);
+      animateValue('global-history-total', 0, Math.round(grandTotal), ' Da');
+
+      if (allSales.length === 0) {
+        listContainer.innerHTML = `
+          <div class="h-40 flex flex-col items-center justify-center text-slate-600 text-xs italic">
+            <span>${filter ? 'Aucune opération à cette date' : 'Aucun historique disponible'}</span>
+          </div>
+        `;
+      } else {
+        allSales.forEach((sale, idx) => {
+          const opNum = allSales.length - idx;
+          const totalArts = sale.items.reduce((a, b) => a + b.qty, 0);
+
+          const card = document.createElement('div');
+          card.className = "p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5";
+          card.innerHTML = `
+            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
+              <span class="text-xs font-bold text-amber-400 font-mono">Opération #${opNum}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${sale.date || ''} à ${sale.time || ''}</span>
+            </div>
+            <div class="space-y-1">
+              ${sale.items.map(i => `
+                <div class="flex justify-between text-[11px] font-mono text-slate-300">
+                  <span>${i.name} (x${i.qty})</span>
+                  <span>${Math.round(i.price * i.qty)} Da</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-slate-800/50 text-xs font-bold font-mono">
+              <span class="text-slate-500">${totalArts} art.</span>
+              <span class="text-amber-400">${Math.round(sale.total)} Da</span>
+            </div>
+          `;
+          listContainer.appendChild(card);
+        });
+      }
+    }
+    function exportHistory() {
+      if (state.salesHistory.length === 0) {
+        showToast('Aucune opération à exporter');
+        return;
+      }
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        sales: state.salesHistory
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `historique-caisse-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      playSound('save');
+      showToast(`${state.salesHistory.length} opération(s) exportée(s)`);
+    }
+    function exportAllData() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        version: 1,
+        products: state.products,
+        salesHistory: state.salesHistory,
+settings: {
+  soundEnabled: state.soundEnabled,
+  vibrationEnabled: state.vibrationEnabled,
+  easyVisionEnabled: state.easyVisionEnabled,
+  largeTextEnabled: state.largeTextEnabled,
+  ambienceEnabled: state.ambienceEnabled,
+  dailyGoal: state.dailyGoal,
+  gridMode: state.gridMode,
+  customGrid: state.customGrid,
+  showCost: state.showCost,
+  showStock: state.showStock,
+  showAlert: state.showAlert,
+  discount: state.discount,
+  discountEnabled: state.discountEnabled,
+  imgbbApiKey: state.imgbbApiKey
+}
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      a.href = url;
+      a.download = `caisse-saloon-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      playSound('save');
+      showToast('Données exportées', 'success');
+    }
+    function importAllData(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+reader.onload = async function(e) {
+try {
+  const data = JSON.parse(e.target.result);
+  if (!data || typeof data !== 'object') throw new Error('Fichier invalide');
+
+  const ok = await showAppDialog({
+    type: 'confirm',
+    danger: true,
+    title: 'Importer les données',
+    message: 'Importer ces données ?\nCela remplacera les produits, l\'historique et les paramètres actuels.',
+    confirmText: 'Importer'
+  });
+  if (!ok) {
+    event.target.value = '';
+    return;
+  }
+
+  if (data.products) {
+    state.products = data.products;
+    saveProductsToStorage();
+  }
+  if (Array.isArray(data.salesHistory)) {
+    state.salesHistory = data.salesHistory;
+    saveSalesToStorage();
+  }
+  if (data.settings) {
+    const s = data.settings;
+    if (s.soundEnabled !== undefined) { state.soundEnabled = s.soundEnabled; localStorage.setItem('saloon_sound', JSON.stringify(s.soundEnabled)); }
+    if (s.vibrationEnabled !== undefined) { state.vibrationEnabled = s.vibrationEnabled; localStorage.setItem('saloon_vibration', JSON.stringify(s.vibrationEnabled)); }
+    if (s.easyVisionEnabled !== undefined) { state.easyVisionEnabled = s.easyVisionEnabled; localStorage.setItem('saloon_easy_vision', JSON.stringify(s.easyVisionEnabled)); }
+    if (s.largeTextEnabled !== undefined) { state.largeTextEnabled = s.largeTextEnabled; localStorage.setItem('saloon_large_text', JSON.stringify(s.largeTextEnabled)); }
+    if (s.ambienceEnabled !== undefined) { state.ambienceEnabled = s.ambienceEnabled; localStorage.setItem('saloon_ambience', JSON.stringify(s.ambienceEnabled)); }
+    if (s.dailyGoal !== undefined) { state.dailyGoal = s.dailyGoal; localStorage.setItem('saloon_daily_goal', String(s.dailyGoal)); }
+    if (s.gridMode) { state.gridMode = s.gridMode; localStorage.setItem('saloon_grid_mode', s.gridMode); }
+    if (s.customGrid !== undefined) { state.customGrid = s.customGrid; localStorage.setItem('saloon_custom_grid', JSON.stringify(s.customGrid)); }
+    if (s.showCost !== undefined) { state.showCost = s.showCost; localStorage.setItem('saloon_show_cost', JSON.stringify(s.showCost)); }
+    if (s.showStock !== undefined) { state.showStock = s.showStock; localStorage.setItem('saloon_show_stock', JSON.stringify(s.showStock)); }
+    if (s.showAlert !== undefined) { state.showAlert = s.showAlert; localStorage.setItem('saloon_show_alert', JSON.stringify(s.showAlert)); }
+    if (s.discount !== undefined) { state.discount = s.discount; localStorage.setItem('saloon_discount', String(s.discount)); }
+    if (s.discountEnabled !== undefined) { state.discountEnabled = s.discountEnabled; localStorage.setItem('saloon_discount_enabled', JSON.stringify(s.discountEnabled)); }
+    if (s.imgbbApiKey !== undefined) { state.imgbbApiKey = s.imgbbApiKey; localStorage.setItem('saloon_imgbb_key', s.imgbbApiKey); }
+  }
+
+  applyLargeText();
+  playSound('save');
+  showToast('Données importées avec succès', 'success');
+  render();
+  if (state.activeTab === 'stock') renderStockView();
+  if (state.activeTab === 'recette') renderRecetteView();
+  if (state.activeTab === 'graphs') renderGraphsView();
+  refreshHistorySizeLabel();
+} catch (err) {
+  console.error(err);
+  showToast('Fichier JSON invalide');
+}
+  event.target.value = '';
+};
+      reader.readAsText(file);
+    }
+async function archiveHistory() {
+  if (state.salesHistory.length === 0) {
+    showToast('Aucune opération à archiver');
+    return;
+  }
+  const ok = await showAppDialog({
+    type: 'confirm',
+    danger: true,
+    title: 'Archiver l\'historique',
+    message: `Exporter puis vider l'historique (${state.salesHistory.length} opération(s)) ?`,
+    confirmText: 'Archiver'
+  });
+  if (!ok) {
+    return;
+  }
+  exportHistory();
+  state.salesHistory = [];
+  saveSalesToStorage();
+  if (state.activeTab === 'recette') renderRecetteView();
+  if (state.activeTab === 'graphs') renderGraphsView();
+  refreshHistorySizeLabel();
+  showToast('Historique archivé et vidé');
+}
+    function refreshHistorySizeLabel() {
+      const el = document.getElementById('history-size-label');
+      if (!el) return;
+      const count = state.salesHistory.length;
+      const bytes = new Blob([JSON.stringify(state.salesHistory)]).size;
+      const kb = (bytes / 1024).toFixed(1);
+      el.textContent = `${count} opération(s) • ${kb} Ko`;
+    }
+
+    // VUE GRAPHS
+    function renderGraphsView() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const currentYearMonth = todayStr.substring(0, 7);
+
+      const todaySalesMap = {};
+      state.salesHistory.forEach(sale => {
+        if (sale.date === todayStr) {
+          sale.items.forEach(item => {
+            // Ne garder que les produits qui existent encore dans le Saloon
+            if (item.tileIndex !== undefined && state.products[item.tileIndex]) {
+              todaySalesMap[item.name] = (todaySalesMap[item.name] || 0) + (item.price * item.qty);
+            }
+          });
+        }
+      });
+
+      const pieLabels = Object.keys(todaySalesMap);
+      const pieData = Object.values(todaySalesMap);
+
+      const monthDaysMap = {};
+      const year = parseInt(currentYearMonth.split('-')[0], 10);
+      const month = parseInt(currentYearMonth.split('-')[1], 10);
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayFormatted = String(d).padStart(2, '0');
+        monthDaysMap[`${currentYearMonth}-${dayFormatted}`] = 0;
+      }
+
+      state.salesHistory.forEach(sale => {
+        if (sale.date && sale.date.startsWith(currentYearMonth)) {
+          if (monthDaysMap[sale.date] !== undefined) {
+            monthDaysMap[sale.date] += sale.total;
+          }
+        }
+      });
+
+      const barLabels = Object.keys(monthDaysMap).map(d => d.split('-')[2]);
+      const barData = Object.values(monthDaysMap);
+
+      if (todayChartInstance) todayChartInstance.destroy();
+      if (monthChartInstance) monthChartInstance.destroy();
+
+      const ctxPie = document.getElementById('todayPieChart').getContext('2d');
+pieLegendPage = 0;
+if (pieLabels.length === 0) {
+  todayChartInstance = new Chart(ctxPie, {
+    type: 'doughnut',
+    data: {
+      labels: ['Aucune vente aujourd\'hui'],
+      datasets: [{ data: [1], backgroundColor: ['#334155'], borderWidth: 0, borderColor: 'transparent' }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+  renderPieLegend([], [], []);
+} else {
+  const PIE_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16'];
+  todayChartInstance = new Chart(ctxPie, {
+    type: 'pie',
+    data: {
+      labels: pieLabels,
+      datasets: [{
+        data: pieData,
+        backgroundColor: PIE_COLORS,
+        borderWidth: 0,
+        borderColor: 'transparent'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+  renderPieLegend(pieLabels, PIE_COLORS, pieData);
+}
+
+      const ctxBar = document.getElementById('monthBarChart').getContext('2d');
+      monthChartInstance = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: barLabels,
+          datasets: [{
+            label: 'Total (Da)',
+            data: barData,
+            backgroundColor: '#f59e0b',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+function renderPieLegend(labels, colors, data) {
+  const pager = document.getElementById('pie-legend-pager');
+  const track = document.getElementById('pie-legend-track');
+  const dots = document.getElementById('pie-legend-dots');
+  const viewport = document.getElementById('pie-legend-viewport');
+  if (!pager || !track || !dots || !viewport) return;
+
+  if (!labels || labels.length === 0) {
+    pager.classList.add('hidden');
+    track.innerHTML = '';
+    track.style.transform = 'translateX(0%)';
+    dots.innerHTML = '';
+    return;
+  }
+
+  pager.classList.remove('hidden');
+
+  const itemsPerPage = 5;
+  const totalPages = Math.max(1, Math.ceil(labels.length / itemsPerPage));
+  if (pieLegendPage >= totalPages) pieLegendPage = 0;
+  if (pieLegendPage < 0) pieLegendPage = totalPages - 1;
+
+  let html = '';
+  for (let p = 0; p < totalPages; p++) {
+    const start = p * itemsPerPage;
+    const end = Math.min(start + itemsPerPage, labels.length);
+    let pageItems = '';
+    for (let i = start; i < end; i++) {
+      const color = colors[i % colors.length];
+      const value = Math.round(Number(data[i]) || 0);
+      pageItems += '<div class="flex items-center gap-2 py-0.5 min-w-0">' +
+        '<span class="shrink-0 w-2 h-2 rounded-full" style="background:' + color + '"></span>' +
+        '<span class="text-[11px] text-slate-300 truncate flex-1">' + labels[i] + '</span>' +
+        '<span class="text-[11px] font-mono text-amber-400 font-bold shrink-0">' + value + ' Da</span>' +
+      '</div>';
+    }
+    html += '<div class="shrink-0 px-1" style="flex: 0 0 100%;">' + pageItems + '</div>';
+  }
+
+  track.style.transition = 'none';
+  track.innerHTML = html;
+  track.style.transform = 'translateX(' + (-pieLegendPage * 100) + '%)';
+  requestAnimationFrame(() => {
+    track.style.transition = 'transform 0.3s ease-out';
+  });
+
+  if (totalPages <= 1) {
+    dots.innerHTML = '';
+  } else {
+    let dotsHtml = '';
+    for (let p = 0; p < totalPages; p++) {
+      dotsHtml += '<button type="button" class="pie-legend-dot' + (p === pieLegendPage ? ' active' : '') + '" data-page="' + p + '" aria-label="Page ' + (p + 1) + '"></button>';
+    }
+    dots.innerHTML = dotsHtml;
+    dots.querySelectorAll('.pie-legend-dot').forEach(btn => {
+      btn.onclick = () => navigatePieLegendPage(Number(btn.dataset.page));
+    });
+  }
+
+  pager._labels = labels;
+  pager._colors = colors;
+  pager._data = data;
+
+  if (!pager._swipeAttached) {
+    pager._swipeAttached = true;
+    let startX = null;
+    let startY = null;
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    viewport.addEventListener('touchend', (e) => {
+      if (startX === null) return;
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      startX = null;
+      startY = null;
+      if (Math.abs(dx) < 40) return;
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      const total = Math.max(1, Math.ceil((pager._labels || []).length / 5));
+      if (dx < 0) {
+        if (pieLegendPage < total - 1) navigatePieLegendPage(pieLegendPage + 1);
+      } else {
+        if (pieLegendPage > 0) navigatePieLegendPage(pieLegendPage - 1);
+      }
+    }, { passive: true });
+  }
+}
+function navigatePieLegendPage(page) {
+  const pager = document.getElementById('pie-legend-pager');
+  if (!pager) return;
+  const totalPages = Math.max(1, Math.ceil((pager._labels || []).length / 5));
+  if (page < 0) page = 0;
+  if (page >= totalPages) page = totalPages - 1;
+  if (page === pieLegendPage) return;
+  pieLegendPage = page;
+  const track = document.getElementById('pie-legend-track');
+  const dots = document.getElementById('pie-legend-dots');
+  if (track) track.style.transform = 'translateX(' + (-page * 100) + '%)';
+  if (dots) {
+    dots.querySelectorAll('.pie-legend-dot').forEach(btn => {
+      btn.classList.toggle('active', Number(btn.dataset.page) === page);
+    });
+  }
+  playSound('tab');
+  vibrate(6);
+}
+
+    function toggleAdmin() {
+      playSound('admin');
+      state.isAdmin = !state.isAdmin;
+      render();
+    }
+function startTileMove(index) {
+  if (state.movingTile !== null && state.movingTile !== undefined) return;
+  state.movingTile = index;
+
+  const tiles = document.querySelectorAll('#grid > div[data-tile-index]');
+  tiles.forEach(t => {
+    const idx = Number(t.dataset.tileIndex);
+    if (idx === index) {
+      t.classList.add('tile-moving');
+    } else {
+      t.classList.add('tile-target-hint');
+    }
+  });
+
+  playSound('click');
+  vibrate(20);
+}
+function cancelTileMove() {
+  state.movingTile = null;
+  document.querySelectorAll('.tile-moving, .tile-target-hint').forEach(t => {
+    t.classList.remove('tile-moving', 'tile-target-hint');
+  });
+  playSound('close');
+}
+function performTileMove(fromIndex, toIndex) {
+  if (fromIndex === toIndex) {
+    cancelTileMove();
+    return;
+  }
+  state.movingTile = null;
+  document.querySelectorAll('.tile-moving, .tile-target-hint').forEach(t => {
+    t.classList.remove('tile-moving', 'tile-target-hint');
+  });
+  const ok = swapProducts(fromIndex, toIndex);
+  if (ok) {
+    playSound('save');
+    vibrate([8, 30, 8]);
+    render();
+  }
+}
+function createPage() {
+  const slots = getCurrentPositionsForPagination().length;
+  if (!slots) return;
+  const maxKey = Object.keys(state.products).reduce((m, k) => {
+    const v = state.products[k];
+    if (!v || !v.name) return m;
+    return Math.max(m, Number(k));
+  }, -1);
+  const derived = Math.max(1, Math.ceil((maxKey + 1) / slots));
+  const total = Math.max(derived, state.pageCount || 1);
+
+  if (state.currentPage < total - 1) return;
+
+  if (!currentPageHasProducts()) {
+    showToast('Ajoutez au moins un produit sur cette page avant d\'en créer une nouvelle');
+    return;
+  }
+
+  state.pageCount = total + 1;
+  localStorage.setItem('saloon_page_count', String(state.pageCount));
+  state.currentPage = total;
+
+  playSound('save');
+  vibrate(10);
+  render();
+  showPageIndicator();
+}
+async function deleteCurrentPage() {
+  if (state.currentPage === 0) {
+    showToast('La première page ne peut pas être supprimée');
+    return;
+  }
+
+  const slots = getCurrentPositionsForPagination().length;
+  if (!slots) return;
+  const pageStart = state.currentPage * slots;
+  const pageEnd = pageStart + slots;
+
+  const productKeysOnPage = Object.keys(state.products).filter(k => {
+    const n = Number(k);
+    return n >= pageStart && n < pageEnd && state.products[k] && state.products[k].name;
+  });
+
+  if (productKeysOnPage.length > 0) {
+    const ok = await showAppDialog({
+      type: 'confirm',
+      danger: true,
+      title: 'Supprimer la page',
+      message: `Supprimer la page ${state.currentPage + 1} et ses ${productKeysOnPage.length} produit(s) ?\nCette action est irréversible.`,
+      confirmText: 'Supprimer'
+    });
+    if (!ok) return;
+  }
+
+  productKeysOnPage.forEach(k => { delete state.products[k]; });
+  saveProductsToStorage();
+
+  const maxKey = Object.keys(state.products).reduce((m, k) => {
+    const v = state.products[k];
+    if (!v || !v.name) return m;
+    return Math.max(m, Number(k));
+  }, -1);
+  const derived = Math.max(1, Math.ceil((maxKey + 1) / slots));
+  const currentTotal = Math.max(derived, state.pageCount || 1);
+  if (state.currentPage >= currentTotal - 1) {
+    state.pageCount = Math.max(1, currentTotal - 1);
+    localStorage.setItem('saloon_page_count', String(state.pageCount));
+  }
+
+  state.currentPage = Math.max(0, state.currentPage - 1);
+  playSound('delete');
+  vibrate([20, 30, 20]);
+  render();
+  showPageIndicator();
+}
+function getCurrentPositionsForPagination() {
+  if (state.gridMode === 'custom' && state.customGrid) {
+    const cols = state.customGrid.cols;
+    const rows = state.customGrid.rows;
+    const rect = state.customGrid.rect;
+    const positions = [];
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        const inTicket = c >= rect.c1 && c <= rect.c2 && r >= rect.r1 && r <= rect.r2;
+        if (!inTicket) positions.push({ r, c });
+      }
+    }
+    return positions;
+  } else if (state.gridMode === 'compact') {
+    return TILE_POSITIONS_COMPACT;
+  } else if (state.gridMode === 'grand') {
+    return TILE_POSITIONS_GRAND;
+  }
+  return TILE_POSITIONS_STANDARD;
+}
+function hasNextPage() {
+  const slots = getCurrentPositionsForPagination().length;
+  if (!slots) return false;
+  const maxKey = Object.keys(state.products).reduce((m, k) => {
+    const v = state.products[k];
+    if (!v || !v.name) return m;
+    return Math.max(m, Number(k));
+  }, -1);
+  const derivedPages = Math.max(1, Math.ceil((maxKey + 1) / slots));
+  const totalPages = Math.max(derivedPages, state.pageCount || 1);
+  if (state.currentPage + 1 >= totalPages) return false;
+  // Page suivante vide : accessible uniquement en mode édition
+  if (!nextPageHasProducts() && !state.isAdmin) return false;
+  return true;
+}
+function currentPageHasProducts() {
+  const slots = getCurrentPositionsForPagination().length;
+  if (!slots) return false;
+  const start = state.currentPage * slots;
+  const end = start + slots;
+  return Object.keys(state.products).some(k => {
+    const n = Number(k);
+    return n >= start && n < end && state.products[k] && state.products[k].name;
+  });
+}
+function nextPageHasProducts() {
+  const slots = getCurrentPositionsForPagination().length;
+  if (!slots) return false;
+  const start = (state.currentPage + 1) * slots;
+  const end = start + slots;
+  return Object.keys(state.products).some(k => {
+    const n = Number(k);
+    return n >= start && n < end && state.products[k] && state.products[k].name;
+  });
+}
+function hasPrevPage() {
+  return state.currentPage > 0;
+}
+function showPageIndicator() {
+  const indicator = document.getElementById('page-indicator');
+  const text = document.getElementById('page-indicator-text');
+  if (!indicator || !text) return;
+  const slots = getCurrentPositionsForPagination().length;
+  const maxKey = Object.keys(state.products).reduce((m, k) => {
+    const v = state.products[k];
+    if (!v || !v.name) return m;
+    return Math.max(m, Number(k));
+  }, -1);
+  const totalPages = Math.max(1, Math.ceil((maxKey + 1) / slots));
+  text.textContent = (state.currentPage + 1) + ' / ' + totalPages;
+  indicator.classList.remove('hidden');
+  indicator.style.opacity = '1';
+  clearTimeout(indicator._timer);
+  indicator._timer = setTimeout(() => {
+    indicator.style.opacity = '0';
+    setTimeout(() => indicator.classList.add('hidden'), 280);
+  }, 1100);
+}
+function goToNextPage() {
+  if (!hasNextPage()) return;
+  state.currentPage++;
+  playSound('tab');
+  vibrate(10);
+  render();
+  showPageIndicator();
+}
+function goToPrevPage() {
+  if (!hasPrevPage()) return;
+  state.currentPage--;
+  playSound('tab');
+  vibrate(10);
+  render();
+  showPageIndicator();
+}
+function initGridSwipe() {
+  const grid = document.getElementById('grid');
+  if (!grid) return;
+  if (grid._swipeAttached) return;
+  grid._swipeAttached = true;
+  grid.style.touchAction = 'pan-y';
+
+  let swipe = null;
+
+  const onDown = (e) => {
+    if (e.pointerType === 'mouse') return;
+    if (dragState) return;
+    const tgt = e.target;
+    if (!(tgt instanceof Element)) return;
+    if (!grid.contains(tgt)) return;
+    swipe = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      startTime: Date.now()
+    };
+    initGridSwipe._swipeInProgress = false;
+  };
+
+  const onMove = (e) => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const dx = e.clientX - swipe.startX;
+    const dy = e.clientY - swipe.startY;
+    if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy)) {
+      initGridSwipe._swipeInProgress = true;
+    }
+  };
+
+  const onUp = (e) => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const s = swipe;
+    swipe = null;
+    const dx = e.clientX - s.startX;
+    const dy = e.clientY - s.startY;
+    const dt = Date.now() - s.startTime;
+    const wasSwipe = Math.abs(dx) >= 45 && Math.abs(dy) <= Math.abs(dx) * 0.8 && dt <= 900;
+    if (wasSwipe) {
+      initGridSwipe._lastSwipeAt = Date.now();
+      if (dx < 0) {
+        goToNextPage();
+      } else {
+        goToPrevPage();
+      }
+    }
+    setTimeout(() => {
+      initGridSwipe._swipeInProgress = false;
+    }, 150);
+  };
+
+  const onCancel = (e) => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    swipe = null;
+    initGridSwipe._swipeInProgress = false;
+  };
+
+  const onClickCapture = (e) => {
+    if (initGridSwipe._lastSwipeAt && Date.now() - initGridSwipe._lastSwipeAt < 300) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
+  document.addEventListener('pointerdown', onDown, { passive: true });
+  document.addEventListener('pointermove', onMove, { passive: true });
+  document.addEventListener('pointerup', onUp, { passive: true });
+  document.addEventListener('pointercancel', onCancel, { passive: true });
+  document.addEventListener('click', onClickCapture, true);
+}
+
+    function render() {
+const grid = document.getElementById('grid');
+const previousTotal = state.lastDisplayedTotal || 0;
+grid.innerHTML = '';
+
+      // Choix de la grille selon le mode
+      let positions, cols, rows, ticketColStart, ticketColSpan, ticketRowStart, ticketRowSpan;
+
+      if (state.gridMode === 'custom' && state.customGrid) {
+        cols = state.customGrid.cols;
+        rows = state.customGrid.rows;
+        const rect = state.customGrid.rect;
+        ticketColStart = rect.c1;
+        ticketColSpan = rect.c2 - rect.c1 + 1;
+        ticketRowStart = rect.r1;
+        ticketRowSpan = rect.r2 - rect.r1 + 1;
+
+        // Générer toutes les positions sauf le rectangle du ticket
+        positions = [];
+        for (let r = 1; r <= rows; r++) {
+          for (let c = 1; c <= cols; c++) {
+            const inTicket = c >= rect.c1 && c <= rect.c2 && r >= rect.r1 && r <= rect.r2;
+            if (!inTicket) {
+              positions.push({ r, c });
+            }
+          }
+        }
+      } else if (state.gridMode === 'compact') {
+        positions = TILE_POSITIONS_COMPACT;
+        cols = 5; rows = 9;
+        ticketColStart = 2; ticketColSpan = 3;
+        ticketRowStart = 3; ticketRowSpan = 6;
+      } else if (state.gridMode === 'grand') {
+        positions = TILE_POSITIONS_GRAND;
+        cols = 7; rows = 10;
+        ticketColStart = 2; ticketColSpan = 5;
+        ticketRowStart = 3; ticketRowSpan = 7;
+      } else {
+        positions = TILE_POSITIONS_STANDARD;
+        cols = 6; rows = 10;
+        ticketColStart = 2; ticketColSpan = 4;
+        ticketRowStart = 3; ticketRowSpan = 8;
+      }
+
+      // Appliquer les variables CSS dynamiques
+      grid.style.setProperty('--cols', cols);
+      grid.style.setProperty('--rows', rows);
+const _productsPerPage = positions.length;
+const _maxKey = Object.keys(state.products).reduce((m, k) => {
+  const v = state.products[k];
+  if (!v || !v.name) return m;
+  return Math.max(m, Number(k));
+}, -1);
+const _derivedPages = Math.max(1, Math.ceil((_maxKey + 1) / _productsPerPage));
+if (state.pageCount < _derivedPages) {
+  state.pageCount = _derivedPages;
+  localStorage.setItem('saloon_page_count', String(state.pageCount));
+}
+const _totalPages = Math.max(_derivedPages, state.pageCount || 1);
+if (state.currentPage >= _totalPages) state.currentPage = Math.max(0, _totalPages - 1);
+if (state.currentPage < 0) state.currentPage = 0;
+const pageOffset = state.currentPage * _productsPerPage;
+
+      positions.forEach((pos, idx) => {
+const productIndex = pageOffset + idx;
+const prod = state.products[productIndex];
+const tile = document.createElement('div');
+tile.style.gridRow = pos.r;
+tile.style.gridColumn = pos.c;
+
+let isLowStock = false;
+        if (prod && prod.stock !== undefined && prod.stock !== null && prod.stock !== '' && prod.alert !== undefined && prod.alert !== null && prod.alert !== '') {
+          if (Number(prod.stock) < Number(prod.alert)) {
+            isLowStock = true;
+          }
+        }
+
+        let borderStyle = 'border-slate-800 bg-slate-900 hover:border-slate-700';
+        if (state.isAdmin) {
+          borderStyle = 'border-dashed border-amber-500/60 bg-slate-900/80 hover:bg-amber-950/30';
+        }
+        if (isLowStock) {
+          borderStyle = 'border-2 border-red-500 bg-red-950/20 hover:border-red-400 low-stock-pulse';
+        }
+
+        tile.className = `aspect-square relative rounded-lg overflow-hidden cursor-pointer transition-all active:scale-95 flex items-center justify-center ${borderStyle}`;
+
+        if (prod) {
+          if (prod.image) {
+            tile.classList.add('tile-shine');
+            let imgFrame = 'border-transparent bg-transparent';
+            if (isLowStock) {
+              imgFrame = 'border border-red-500/70 bg-transparent low-stock-pulse';
+            } else if (state.isAdmin) {
+              imgFrame = 'border border-dashed border-amber-500/50 bg-transparent';
+            }
+            tile.className = `aspect-square relative rounded-lg overflow-hidden cursor-pointer transition-all active:scale-95 flex items-center justify-center ${imgFrame}`;
+            tile.innerHTML = `<img src="${prod.image}" class="w-full h-full object-contain">`;
+          } else {
+            tile.innerHTML = `<div class="w-full h-full bg-amber-600/20 flex items-center justify-center text-amber-500 font-bold text-xs">${prod.name.substring(0, 2).toUpperCase()}</div>`;
+          }
+        } else {
+          if (state.isAdmin) {
+            tile.innerHTML = '';
+          } else {
+            tile.className = 'aspect-square relative rounded-lg overflow-hidden cursor-default border-transparent bg-transparent';
+            tile.innerHTML = '';
+          }
+        }
+
+tile.dataset.tileIndex = String(productIndex);
+tile.style.touchAction = 'none';
+tile.addEventListener('contextmenu', (e) => e.preventDefault());
+if (state.isAdmin && state.movingTile !== null && state.movingTile !== undefined) {
+  if (productIndex === state.movingTile) {
+    tile.classList.add('tile-moving');
+  } else {
+    tile.classList.add('tile-target-hint');
+  }
+}
+
+if (state.isAdmin) {
+  let pressTimer = null;
+  let pressStart = null;
+  let didLongPress = false;
+  let startedMove = false;
+
+  tile.addEventListener('pointerdown', (e) => {
+    if (e.button && e.button !== 0) return;
+    e.preventDefault();
+    didLongPress = false;
+    startedMove = false;
+    pressStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+
+    const isMovingMode = state.movingTile !== null && state.movingTile !== undefined;
+    if (!isMovingMode && state.products[productIndex]) {
+      pressTimer = setTimeout(() => {
+        didLongPress = true;
+        startedMove = true;
+        startTileMove(productIndex);
+      }, 380);
+    }
+  });
+
+  tile.addEventListener('pointermove', (e) => {
+    if (!pressStart || didLongPress) return;
+    const dx = e.clientX - pressStart.x;
+    const dy = e.clientY - pressStart.y;
+    if (Math.hypot(dx, dy) > 12) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+      pressStart = null;
+    }
+  });
+
+  tile.addEventListener('pointerup', (e) => {
+    clearTimeout(pressTimer);
+    if (startedMove) {
+      startedMove = false;
+      pressStart = null;
+      didLongPress = false;
+      return;
+    }
+    const isMovingMode = state.movingTile !== null && state.movingTile !== undefined;
+    if (isMovingMode) {
+      if (pressStart) {
+        handleTileClick(productIndex, e);
+      }
+    } else if (!didLongPress && pressStart && (Date.now() - pressStart.time < 400)) {
+      handleTileClick(productIndex, e);
+    }
+    pressStart = null;
+    didLongPress = false;
+  });
+
+  tile.addEventListener('pointercancel', () => {
+    clearTimeout(pressTimer);
+    pressStart = null;
+    didLongPress = false;
+    startedMove = false;
+  });
+} else {
+  let pressTimer = null;
+  let pressStart = null;
+  let didLongPress = false;
+
+  tile.addEventListener('pointerdown', (e) => {
+    if (e.button && e.button !== 0) return;
+    if (!state.products[productIndex]) return;
+    didLongPress = false;
+    pressStart = { x: e.clientX, y: e.clientY, time: Date.now() };
+
+    pressTimer = setTimeout(() => {
+      didLongPress = true;
+      openProductPreview(productIndex);
+      vibrate(15);
+    }, 420);
+  });
+
+  tile.addEventListener('pointermove', (e) => {
+    if (!pressStart || didLongPress) return;
+    const dx = e.clientX - pressStart.x;
+    const dy = e.clientY - pressStart.y;
+    if (Math.hypot(dx, dy) > 12) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  });
+
+  tile.addEventListener('pointerup', (e) => {
+    clearTimeout(pressTimer);
+    if (!didLongPress && pressStart && (Date.now() - pressStart.time < 400)) {
+      handleTileClick(productIndex, e);
+    }
+    pressStart = null;
+  });
+
+  tile.addEventListener('pointercancel', () => {
+    clearTimeout(pressTimer);
+    pressStart = null;
+  });
+}
+
+        grid.appendChild(tile);
+      });
+
+      const saloon = document.createElement('div');
+      // Position du ticket selon le mode
+      saloon.style.gridColumn = ticketColStart + ' / span ' + ticketColSpan;
+      saloon.style.gridRow = ticketRowStart + ' / span ' + ticketRowSpan;
+saloon.className = `saloon-panel bg-slate-900/90 border-2 ${
+  state.isAdmin ? 'border-amber-500 ring-2 ring-amber-500/30' : 'border-amber-500/40'
+} rounded-xl flex flex-col justify-between p-2 shadow-2xl relative overflow-hidden backdrop-blur-md transition-all`;
+      
+      const totalSum = state.ticket.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const discountAmt = state.discountEnabled ? Math.min(state.discount || 0, totalSum) : 0;
+      const finalSum = Math.max(0, totalSum - discountAmt);
+
+      // Construction robuste des lignes
+      let ticketLinesHtml = '';
+if (state.ticket.length === 0) {
+  ticketLinesHtml = '<div class="h-full flex items-center justify-center text-slate-600 text-[11px] italic text-center">Cliquez sur un produit<br>pour l\'ajouter au ticket</div>';
+} else {
+  state.ticket.forEach((item) => {
+    const product = state.products[item.tileIndex];
+    const hasImg = !!(product && product.image);
+    const lineTotal = Math.round(item.price * item.qty);
+
+    let thumbHtml = '';
+    if (state.easyVisionEnabled) {
+      if (hasImg) {
+        thumbHtml = '<img src="' + product.image + '" class="w-7 h-7 object-contain rounded shadow-sm shrink-0" alt="">';
+      } else {
+        thumbHtml = '<div class="w-7 h-7 rounded bg-amber-600/30 border border-amber-500/50 text-[9px] font-bold text-amber-400 flex items-center justify-center shrink-0">' +
+          item.name.substring(0, 2).toUpperCase() +
+        '</div>';
+      }
+    }
+
+    let contentDisplay = '';
+    if (state.easyVisionEnabled) {
+      contentDisplay = '<div class="flex items-center gap-2 min-w-0 flex-1">' +
+        thumbHtml +
+        '<span class="text-[11px] text-amber-400/90 font-mono font-bold">x' + item.qty + '</span>' +
+        '<span class="font-bold text-amber-400 text-xs ml-auto shrink-0">' + lineTotal + ' Da</span>' +
+      '</div>';
+    } else {
+      contentDisplay = '<span class="truncate max-w-[65px] font-sans text-slate-200">' + item.name + '</span>';
+    }
+
+    let controlsDisplay = '';
+    if (state.easyVisionEnabled) {
+      controlsDisplay = '<button type="button" onclick="event.stopPropagation(); removeTicketLine(' + item.tileIndex + ')" class="text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded p-1 transition shrink-0" title="Retirer la ligne">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+    } else {
+      controlsDisplay = '<div class="flex items-center gap-0.5 shrink-0">' +
+        '<button type="button" onclick="event.stopPropagation(); changeTicketQty(' + item.tileIndex + ', -1)" class="w-4 h-4 text-slate-300 hover:text-amber-400 hover:bg-slate-800 rounded font-bold leading-none transition flex items-center justify-center">−</button>' +
+        '<span class="text-[10px] text-amber-400/80 min-w-[16px] text-center">x' + item.qty + '</span>' +
+        '<button type="button" onclick="event.stopPropagation(); changeTicketQty(' + item.tileIndex + ', 1)" class="w-4 h-4 text-slate-300 hover:text-amber-400 hover:bg-slate-800 rounded font-bold leading-none transition flex items-center justify-center">+</button>' +
+        '<span class="font-bold text-slate-100 ml-0.5">' + lineTotal + ' Da</span>' +
+        '<button type="button" onclick="event.stopPropagation(); removeTicketLine(' + item.tileIndex + ')" class="ml-0.5 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 rounded p-0.5 transition" title="Retirer">' +
+          '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>' +
+      '</div>';
+    }
+
+    const enterClass = (state.lastTicketChange && state.lastTicketChange.tileIndex === item.tileIndex && state.lastTicketChange.kind === 'add') ? ' ticket-line-enter' : '';
+    const flexClass = state.easyVisionEnabled ? 'flex-row justify-between items-center' : 'justify-between items-center';
+
+    ticketLinesHtml += '<div class="ticket-line flex ' + flexClass + ' bg-slate-950/60 px-2 py-1.5 rounded border border-slate-800 gap-1.5 cursor-pointer active:bg-slate-900/80 transition-colors' + enterClass + '" data-tile-index="' + item.tileIndex + '" onclick="changeTicketQty(' + item.tileIndex + ', -1)">' +
+      contentDisplay + controlsDisplay +
+    '</div>';
+  });
+}
+
+saloon.innerHTML = `
+  <div class="flex items-center justify-between border-b border-amber-500/20 pb-1 mb-1">
+    <div class="flex items-center gap-1.5">
+      <span class="text-xs font-black tracking-widest text-amber-400 uppercase">SALOON</span>
+      ${state.isAdmin ? '<span class="text-[9px] bg-amber-500 text-slate-950 px-1 rounded font-bold uppercase">Éd.</span>' : ''}
+    </div>
+    <span class="text-[10px] text-slate-400 font-mono">${state.ticket.reduce((a,b)=>a+b.qty,0)} art.</span>
+  </div>
+
+  <div class="flex-1 min-h-0 overflow-y-auto space-y-1 pr-1 my-1 text-xs font-mono">
+    ${ticketLinesHtml}
+  </div>
+
+  <div class="border-t border-amber-500/20 pt-1 mb-1 space-y-1">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5">
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" ${state.discountEnabled ? 'checked' : ''} onchange="toggleDiscount(this.checked)" class="sr-only peer">
+          <div class="w-7 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-500"></div>
+        </label>
+        <span class="text-[10px] uppercase font-bold ${state.discountEnabled ? 'text-amber-400' : 'text-slate-500'}">Remise</span>
+      </div>
+      <button type="button" onclick="openNumpad()" class="discount-input ${state.discountEnabled ? '' : 'opacity-40'} text-right min-w-[70px]">
+        ${Math.round(state.discount || 0)}
+      </button>
+    </div>
+    <div id="saloon-subtotal-line" class="flex justify-between items-center text-[10px] font-mono text-slate-400 ${discountAmt > 0 ? '' : 'hidden'}">
+      <span>Sous-total</span>
+      <span id="saloon-subtotal-val">${Math.round(totalSum)} Da</span>
+    </div>
+    <div id="saloon-discount-line" class="flex justify-between items-center text-[10px] font-mono text-red-400 ${discountAmt > 0 ? '' : 'hidden'}">
+      <span>Remise</span>
+      <span id="saloon-discount-val">-${Math.round(discountAmt)} Da</span>
+    </div>
+  </div>
+
+  ${state.isAdmin ? `
+    <div class="flex gap-1.5" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+      <button type="button" ${state.currentPage > 0 ? '' : 'disabled'} onclick="deleteCurrentPage()" class="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg py-2 flex items-center justify-center gap-1 text-xs font-bold transition active:scale-95">
+        <span class="text-base leading-none">−</span>
+        <span>Page</span>
+      </button>
+      <button type="button" ${(state.currentPage >= _totalPages - 1 && currentPageHasProducts()) ? '' : 'disabled'} onclick="createPage()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg py-2 flex items-center justify-center gap-1 text-xs font-bold transition active:scale-95">
+        <span class="text-base leading-none">+</span>
+        <span>Page</span>
+      </button>
+    </div>
+  ` : `
+    <div onclick="resetTicket()" class="btn-shine cursor-pointer bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg p-2 flex flex-col items-center justify-center transition active:scale-95 shadow-md">
+      <span class="text-[9px] font-extrabold uppercase tracking-wider opacity-80">Nouveau Ticket (Reset)</span>
+      <span id="saloon-total-sum" class="text-lg font-black leading-none">${Math.round(finalSum)} Da</span>
+    </div>
+  `}
+`;
+
+      const startPress = () => {
+        saloonPressTimer = setTimeout(() => {
+          toggleAdmin();
+        }, 800);
+      };
+
+      const cancelPress = () => {
+        if (saloonPressTimer) {
+          clearTimeout(saloonPressTimer);
+          saloonPressTimer = null;
+        }
+      };
+
+      saloon.onmousedown = startPress;
+      saloon.onmouseup = cancelPress;
+      saloon.onmouseleave = cancelPress;
+
+      saloon.ontouchstart = startPress;
+      saloon.ontouchend = cancelPress;
+      saloon.ontouchcancel = cancelPress;
+
+      grid.appendChild(saloon);
+
+      const newTotalRounded = Math.round(finalSum);
+      if (previousTotal !== newTotalRounded) {
+        const totalEl = document.getElementById('saloon-total-sum');
+        if (totalEl) totalEl.textContent = `${previousTotal} Da`;
+        animateTotalFromTo(previousTotal, newTotalRounded);
+      }
+      state.lastDisplayedTotal = newTotalRounded;
+
+      state.lastTicketChange = null;
+    }
+
+function handleTileClick(index, event) {
+  rippleTile(index, event);
+if (initGridSwipe._swipeInProgress) {
+  initGridSwipe._swipeInProgress = false;
+  return;
+}
+if (state.movingTile !== null && state.movingTile !== undefined) {
+  if (index === state.movingTile) {
+    cancelTileMove();
+  } else {
+    performTileMove(state.movingTile, index);
+  }
+  return;
+}
+if (state.isAdmin) {
+  playSound('open');
+  openModal(index);
+} else {
+  const prod = state.products[index];
+  if (prod) {
+    playSound('click');
+    addToTicket(prod, index);
+  }
+}
+}
+
+    function addToTicket(product, index) {
+      if (isStockBlocked(product)) {
+        playSound('delete');
+        vibrate([30, 30, 30]);
+        showToast(`Stock épuisé : ${product.name}`);
+        return;
+      }
+
+      const existing = state.ticket.find(item => item.tileIndex === index);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        state.ticket.push({ tileIndex: index, name: product.name, price: Number(product.price), qty: 1 });
+      }
+
+      if (product.stock !== undefined && product.stock !== null && product.stock !== '') {
+        const currentStock = Number(product.stock);
+        if (currentStock > 0) {
+          product.stock = currentStock - 1;
+          saveProductsToStorage();
+        }
+      }
+
+      state.lastTicketChange = { tileIndex: index, kind: 'add' };
+
+      render();
+      flashTile(index, 1);
+
+      bumpTotalSum();
+      vibrate(10);
+
+      updateNavBadge();
+    }
+async function removeTicketLine(tileIndex) {
+  const idx = state.ticket.findIndex(item => item.tileIndex === tileIndex);
+  if (idx === -1) return;
+  const removed = state.ticket[idx];
+  const ok = await showAppDialog({
+    type: 'confirm',
+    title: 'Retirer du ticket',
+    message: `Retirer "${removed.name}" du ticket ?`,
+    confirmText: 'Retirer'
+  });
+  if (!ok) return;
+
+  const lineEl = document.querySelector(`.ticket-line[data-tile-index="${tileIndex}"]`);
+  if (lineEl) lineEl.classList.add('ticket-line-exit');
+
+  setTimeout(() => {
+    const liveIdx = state.ticket.findIndex(i => i.tileIndex === tileIndex);
+    if (liveIdx === -1) return;
+    const live = state.ticket[liveIdx];
+    const prod = state.products[live.tileIndex];
+    if (prod && prod.stock !== undefined && prod.stock !== null && prod.stock !== '') {
+      prod.stock = Number(prod.stock) + live.qty;
+      saveProductsToStorage();
+    }
+    state.ticket.splice(liveIdx, 1);
+    playSound('delete');
+    render();
+    updateNavBadge();
+    bumpTotalSum();
+  }, 180);
+}
+    function changeTicketQty(tileIndex, delta) {
+      const idx = state.ticket.findIndex(item => item.tileIndex === tileIndex);
+      if (idx === -1) return;
+      const item = state.ticket[idx];
+      const prod = state.products[tileIndex];
+
+      /*#BLOC:code:if(delta>0)*/
+      if (delta > 0) {
+        if (prod && prod.stock !== undefined && prod.stock !== null && prod.stock !== '') {
+          if (Number(prod.stock) <= 0) {
+            playSound('delete');
+            vibrate([30, 30, 30]);
+            showToast(`Stock épuisé : ${item.name}`);
+            return;
+          }
+          prod.stock = Number(prod.stock) - 1;
+          saveProductsToStorage();
+        }
+        item.qty += 1;
+      }
+      /*#FIN:code:if(delta>0)*/
+
+      else {
+        if (item.qty > 1) {
+          item.qty -= 1;
+          if (prod && prod.stock !== undefined && prod.stock !== null && prod.stock !== '') {
+            prod.stock = Number(prod.stock) + 1;
+            saveProductsToStorage();
+          }
+        } else {
+          state.ticket.splice(idx, 1);
+          if (prod && prod.stock !== undefined && prod.stock !== null && prod.stock !== '') {
+            prod.stock = Number(prod.stock) + item.qty;
+            saveProductsToStorage();
+          }
+        }
+      }
+
+      playSound('click');
+      vibrate(delta > 0 ? 8 : 5);
+      state.lastTicketChange = { tileIndex, kind: 'qty' };
+      render();
+      bumpTotalSum();
+      updateNavBadge();
+    }
+
+    function resetTicket() {
+      const hadTicket = state.ticket.length > 0;
+      let lastTotalSum = 0;
+      if (state.ticket.length > 0) {
+        playSound('reset');
+        
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const subtotal = Math.round(state.ticket.reduce((sum, item) => sum + (item.price * item.qty), 0));
+        const discount = state.discountEnabled ? Math.round(Math.min(state.discount || 0, subtotal)) : 0;
+        const totalSum = Math.max(0, subtotal - discount);
+        lastTotalSum = totalSum;
+        
+        state.salesHistory.push({
+          date: todayStr,
+          time: timeStr,
+          subtotal: subtotal,
+          discount: discount,
+          total: totalSum,
+          items: [...state.ticket]
+        });
+        saveSalesToStorage();
+
+        if (state.activeTab === 'recette') {
+          renderRecetteView();
+        }
+      }
+      state.ticket = [];
+      render();
+
+      updateNavBadge();
+
+      if (hadTicket) {
+        playResetEffect(lastTotalSum);
+        vibrate([20, 40, 20]);
+      }
+    }
+
+    function openModal(index) {
+      state.editingIndex = index;
+      const prod = state.products[index] || { name: '', price: '', cost: '', stock: '', alert: '', image: '' };
+      
+      document.getElementById('modal-tile-id').textContent = `#${index + 1}`;
+      document.getElementById('input-name').value = prod.name;
+      document.getElementById('input-price').value = prod.price;
+      document.getElementById('input-cost').value = prod.cost !== undefined && prod.cost !== null ? prod.cost : '';
+      document.getElementById('input-stock').value = prod.stock !== undefined ? prod.stock : '';
+      document.getElementById('input-alert').value = prod.alert !== undefined ? prod.alert : '';
+      document.getElementById('input-image').value = '';
+      
+      state.currentImageUrl = prod.image || '';
+      state.selectedImageFile = null;
+      
+      const imgPreview = document.getElementById('image-preview');
+      const imgContainer = document.getElementById('image-preview-container');
+      const btnDelete = document.getElementById('btn-delete');
+
+      // Afficher / masquer les champs selon les toggles Référence
+      const costWrap = document.getElementById('field-cost-wrapper');
+      const stockWrap = document.getElementById('field-stock-wrapper');
+      const alertWrap = document.getElementById('field-alert-wrapper');
+      if (costWrap) costWrap.style.display = state.showCost ? '' : 'none';
+      if (stockWrap) stockWrap.style.display = state.showStock ? '' : 'none';
+      if (alertWrap) alertWrap.style.display = state.showAlert ? '' : 'none';
+      
+      if (prod.image) {
+        imgPreview.src = prod.image;
+        imgContainer.classList.remove('hidden');
+      } else {
+        imgContainer.classList.add('hidden');
+      }
+
+      if (state.products[index]) {
+        btnDelete.classList.remove('hidden');
+      } else {
+        btnDelete.classList.add('hidden');
+      }
+
+      updateMarginDisplay();
+
+      document.getElementById('product-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('product-modal').classList.add('hidden');
+      state.editingIndex = null;
+      state.selectedImageFile = null;
+      state.currentImageUrl = '';
+    }
+function openProductPreview(index) {
+  const prod = state.products[index];
+  if (!prod) return;
+
+  const modal = document.getElementById('product-preview-modal');
+  const img = document.getElementById('preview-image');
+  const placeholder = document.getElementById('preview-placeholder');
+  const nameEl = document.getElementById('preview-name');
+  const priceEl = document.getElementById('preview-price');
+  const stockEl = document.getElementById('preview-stock');
+
+  nameEl.textContent = prod.name || 'Sans nom';
+  priceEl.textContent = Math.round(Number(prod.price) || 0) + ' Da';
+
+  if (state.showStock && prod.stock !== undefined && prod.stock !== null && prod.stock !== '') {
+    stockEl.textContent = 'Stock : ' + prod.stock;
+    stockEl.classList.remove('hidden');
+  } else if (state.showStock) {
+    stockEl.textContent = 'Stock : Illimité';
+    stockEl.classList.remove('hidden');
+  } else {
+    stockEl.classList.add('hidden');
+  }
+
+  if (prod.image) {
+    img.src = prod.image;
+    img.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  } else {
+    img.classList.add('hidden');
+    placeholder.textContent = (prod.name || '??').substring(0, 2).toUpperCase();
+    placeholder.classList.remove('hidden');
+  }
+
+  modal.classList.remove('hidden');
+  playSound('open');
+}
+function closeProductPreview() {
+  document.getElementById('product-preview-modal').classList.add('hidden');
+  playSound('close');
+}
+let numpadValue = '';
+let pieLegendPage = 0;
+function openNumpad() {
+  numpadValue = String(Math.round(state.discount || 0));
+  if (numpadValue === '0') numpadValue = '';
+  document.getElementById('numpad-display').textContent = numpadValue || '0';
+  document.getElementById('numpad-modal').classList.remove('hidden');
+  playSound('open');
+}
+function closeNumpad() {
+  document.getElementById('numpad-modal').classList.add('hidden');
+  playSound('close');
+}
+function numpadPress(key) {
+  playSound('click');
+  if (key === 'C') {
+    numpadValue = '';
+  } else if (key === '⌫') {
+    numpadValue = numpadValue.slice(0, -1);
+  } else {
+    // Limite à 6 chiffres
+    if (numpadValue.length >= 6) return;
+    numpadValue += key;
+  }
+  document.getElementById('numpad-display').textContent = numpadValue || '0';
+}
+function confirmNumpad() {
+  const val = Math.max(0, parseInt(numpadValue || '0', 10));
+  setDiscount(val);
+  // Activer la remise si une valeur > 0
+  if (val > 0 && !state.discountEnabled) {
+    state.discountEnabled = true;
+    localStorage.setItem('saloon_discount_enabled', 'true');
+  }
+  closeNumpad();
+  render(); // pour mettre à jour l'affichage du ticket
+  playSound('save');
+}
+
+    document.getElementById('input-image').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        state.selectedImageFile = file;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          document.getElementById('image-preview').src = evt.target.result;
+          document.getElementById('image-preview-container').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const name = document.getElementById('input-name').value.trim();
+      const price = Math.round(parseFloat(document.getElementById('input-price').value));
+      const costRaw = document.getElementById('input-cost').value;
+      const stockVal = document.getElementById('input-stock').value;
+      const alertVal = document.getElementById('input-alert').value;
+
+      if (!name || isNaN(price)) return;
+
+      const saveBtn = document.getElementById('btn-save-product');
+      const originalBtnText = saveBtn.textContent;
+      saveBtn.disabled = true;
+
+try {
+  if (state.selectedImageFile) {
+    saveBtn.textContent = 'Traitement & Upload...';
+    state.currentImageUrl = await processAndUploadImage(state.selectedImageFile);
+  }
+
+  playSound('save');
+  state.products[state.editingIndex] = {
+    name,
+    price,
+    cost: costRaw !== '' ? Math.round(parseFloat(costRaw)) : '',
+    stock: stockVal !== '' ? parseInt(stockVal, 10) : '',
+    alert: alertVal !== '' ? parseInt(alertVal, 10) : '',
+    image: state.currentImageUrl
+  };
+  saveProductsToStorage();
+  closeModal();
+  render();
+  if (state.activeTab === 'stock') {
+    renderStockView();
+  }
+} catch (err) {
+  console.error('Erreur lors du traitement image :', err);
+  showAppDialog({ type: 'error', message: 'Erreur lors du traitement de l\'image.' });
+} finally {
+  saveBtn.disabled = false;
+  saveBtn.textContent = originalBtnText;
+}
+    }
+
+    function deleteProduct() {
+      if (state.editingIndex !== null) {
+        delete state.products[state.editingIndex];
+        saveProductsToStorage();
+        closeModal();
+        render();
+        if (state.activeTab === 'stock') {
+          renderStockView();
+        }
+      }
+    }
+
+    // Initialisation
+    render();
+    // Afficher le choix de mode au premier lancement
+    showModeOnboardingIfNeeded();
+updateNavBadge();
+applyAmbience();
+applyLargeText();
+applyTabTint(state.activeTab);
+moveNavIndicator(state.activeTab);
+initGridSwipe();
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.movingTile !== null && state.movingTile !== undefined) {
+    cancelTileMove();
+  }
+});
+
+    window.addEventListener('resize', () => {
+      moveNavIndicator(state.activeTab);
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (state.ticket.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    });
+let deferredInstallPrompt = null;
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function updateInstallBannerVisibility() {
+  const banner = document.getElementById('install-banner');
+  if (!banner) return;
+  if (localStorage.getItem('saloon_install_banner_dismissed') === '1' || isStandaloneMode()) {
+    banner.classList.remove('visible');
+    return;
+  }
+
+  const titleEl = banner.querySelector('[data-install-title]');
+  const subEl = banner.querySelector('[data-install-sub]');
+  const installBtn = document.getElementById('install-banner-install');
+
+  if (deferredInstallPrompt) {
+    if (titleEl) titleEl.textContent = 'Installer l\'application';
+    if (subEl) subEl.textContent = 'Accès rapide depuis l\'écran d\'accueil';
+    if (installBtn) installBtn.classList.remove('hidden');
+    banner.classList.add('visible');
+  } else if (isIos()) {
+    if (titleEl) titleEl.textContent = 'Ajouter à l\'écran d\'accueil';
+    if (subEl) subEl.textContent = 'Partager → Sur l\'écran d\'accueil';
+    if (installBtn) installBtn.classList.add('hidden');
+    banner.classList.add('visible');
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+async function installPwa() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const choice = await deferredInstallPrompt.userChoice;
+  if (choice && choice.outcome === 'accepted') {
+    playSound('save');
+  }
+  deferredInstallPrompt = null;
+  updateInstallBannerVisibility();
+}
+function dismissInstallBanner() {
+  localStorage.setItem('saloon_install_banner_dismissed', '1');
+  playSound('close');
+  updateInstallBannerVisibility();
+}
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  updateInstallBannerVisibility();
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  localStorage.setItem('saloon_install_banner_dismissed', '1');
+  updateInstallBannerVisibility();
+  showToast('Application installée', 'success');
+});
+updateInstallBannerVisibility();
+  </script>
+<script>
+if ('serviceWorker' in navigator) {
+window.addEventListener('load',()=>{
+navigator.serviceWorker.register('./sw.js').catch(err=>console.error(err));
+});
+}
+</script>
+</body>
+</html>
