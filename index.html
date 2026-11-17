@@ -4053,28 +4053,28 @@ try {
       }
     }
 
-if (sessionStorage.getItem('saloon_auth_ok') === '1') {
-  document.getElementById('password-gate')?.remove();
-} else {
-  document.getElementById('app-content')?.classList.add('hidden');
-
-  setTimeout(() => {
-    const input = document.getElementById('password-input');
-    if (input) {
-      input.focus();
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          validatePassword();
-        }
-      });
-    }
-  }, 0);
-}
-
 // Initialisation
 render();
-    // Afficher le choix de mode au premier lancement
-    showModeOnboardingIfNeeded();
+
+const passwordBtn = document.getElementById('password-submit');
+const passwordInput = document.getElementById('password-code');
+
+if (passwordBtn) {
+  passwordBtn.onclick = validatePassword;
+}
+
+if (passwordInput) {
+
+  passwordInput.focus();
+
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      validatePassword();
+    }
+  });
+
+}
+// Protégé par mot de passe : onboarding lancé après validation
 updateNavBadge();
 applyAmbience();
 applyLargeText();
@@ -4099,7 +4099,8 @@ document.addEventListener('keydown', (e) => {
       }
     });
 let deferredInstallPrompt = null;
-const APP_PASSWORD = '1234';
+const PASSWORD_GATE_URL =
+'https://mastercode-password-gate.mmm1747lb.workers.dev/verify';
 async function validatePassword() {
 
   const input = document.getElementById('password-code');
@@ -4128,7 +4129,7 @@ async function validatePassword() {
   try {
 
     const response = await fetch(
-      'https://mastercode-password-gate.mmm1747lb.workers.dev/verify',
+      PASSWORD_GATE_URL,
       {
         method: 'POST',
         headers: {
@@ -4154,12 +4155,15 @@ async function validatePassword() {
 
       document.getElementById('password-gate')?.remove();
 
+      showModeOnboardingIfNeeded();
+
       playSound('save');
 
       return;
     }
 
     input.value = '';
+
     error.textContent = 'Code invalide';
     error.classList.remove('hidden');
 
