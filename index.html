@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salooooooon</title>
+  <title>Caisse Mobile & Saloon</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -552,19 +552,6 @@
 <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="./splash-1242x2208.png">
 <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-750x1334.png">
 <link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="./splash-640x1136.png">
-<meta property="og:title" content="Salooooooon">
-<meta name="twitter:title" content="Salooooooon">
-<meta name="application-name" content="Salooooooon">
-<meta name="apple-mobile-web-app-title" content="Salooooooon">
-<meta name="description" content="Yest">
-<meta property="og:description" content="Yest">
-<meta name="twitter:description" content="Yest">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="./icon.png">
-<meta property="og:image" content="https://mekeirish.github.io/Salooooooon/icon.png">
-<meta name="twitter:image" content="https://mekeirish.github.io/Salooooooon/icon.png">
-<meta name="twitter:card" content="summary">
-<meta property="og:url" content="https://mekeirish.github.io/Salooooooon/">
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col font-sans overflow-hidden select-none">
 
@@ -889,6 +876,38 @@
     </div>
 
   </main>
+<div id="password-gate" class="fixed inset-0 z-[99999] bg-slate-950 flex items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-5 shadow-2xl">
+    <h2 class="text-lg font-black text-amber-400 text-center">
+      Accès sécurisé
+    </h2>
+
+    <p class="text-xs text-slate-400 text-center mt-1 mb-4">
+      Entrez votre code d'accès
+    </p>
+
+    <input
+      id="password-code"
+      type="password"
+      placeholder="Code d'accès"
+      class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+
+    <button
+      id="password-submit"
+      type="button"
+      class="w-full mt-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2 rounded-lg">
+      Déverrouiller
+    </button>
+
+    <p id="password-loading" class="hidden text-center text-xs text-slate-400 mt-3">
+      Vérification...
+    </p>
+
+    <p id="password-error" class="hidden text-center text-xs text-red-400 mt-3">
+      Code invalide
+    </p>
+  </div>
+</div>
 
   <!-- BARRE DE NAVIGATION EN BAS (5 ONGLETS) -->
   <nav id="main-nav" class="relative h-14 bg-slate-900 border-t border-slate-800 flex items-center justify-around px-2 z-40 shrink-0">
@@ -4034,8 +4053,26 @@ try {
       }
     }
 
-    // Initialisation
-    render();
+if (sessionStorage.getItem('saloon_auth_ok') === '1') {
+  document.getElementById('password-gate')?.remove();
+} else {
+  document.getElementById('app-content')?.classList.add('hidden');
+
+  setTimeout(() => {
+    const input = document.getElementById('password-input');
+    if (input) {
+      input.focus();
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          validatePassword();
+        }
+      });
+    }
+  }, 0);
+}
+
+// Initialisation
+render();
     // Afficher le choix de mode au premier lancement
     showModeOnboardingIfNeeded();
 updateNavBadge();
@@ -4062,6 +4099,90 @@ document.addEventListener('keydown', (e) => {
       }
     });
 let deferredInstallPrompt = null;
+const APP_PASSWORD = '1234';
+async function validatePassword() {
+
+  const input = document.getElementById('password-code');
+  const error = document.getElementById('password-error');
+  const loading = document.getElementById('password-loading');
+  const button = document.getElementById('password-submit');
+
+  if (!input || !error || !button) return;
+
+  const code = input.value.trim();
+
+  error.classList.add('hidden');
+
+  if (!code) {
+    error.textContent = 'Veuillez saisir un code';
+    error.classList.remove('hidden');
+    return;
+  }
+
+  button.disabled = true;
+
+  if (loading) {
+    loading.classList.remove('hidden');
+  }
+
+  try {
+
+    const response = await fetch(
+      'https://mastercode-password-gate.mmm1747lb.workers.dev/verify',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: code
+        })
+      }
+    );
+
+    if (response.status === 429) {
+      throw new Error('Trop de tentatives. Réessayez plus tard.');
+    }
+
+    if (!response.ok) {
+      throw new Error('Serveur de vérification indisponible.');
+    }
+
+    const result = await response.json();
+
+    if (result && result.valid === true) {
+
+      document.getElementById('password-gate')?.remove();
+
+      playSound('save');
+
+      return;
+    }
+
+    input.value = '';
+    error.textContent = 'Code invalide';
+    error.classList.remove('hidden');
+
+  } catch (err) {
+
+    input.value = '';
+
+    error.textContent =
+      err?.message ||
+      'Erreur réseau. Vérifiez votre connexion.';
+
+    error.classList.remove('hidden');
+
+  } finally {
+
+    button.disabled = false;
+
+    if (loading) {
+      loading.classList.add('hidden');
+    }
+
+  }
+}
 function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
 }
